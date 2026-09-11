@@ -3,11 +3,21 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-type Tab = "dashboard" | "staff" | "settings" | "qr";
+type Tab =
+  | "dashboard"
+  | "staff"
+  | "assignments"
+  | "rooms"
+  | "records"
+  | "settings"
+  | "qr";
 
 const TABS: { key: Tab; label: string; href: string }[] = [
   { key: "dashboard", label: "출퇴근 관리", href: "/admin" },
   { key: "staff", label: "직원 관리", href: "/admin/staff" },
+  { key: "assignments", label: "객실 배정", href: "/admin/assignments" },
+  { key: "rooms", label: "객실 관리", href: "/admin/rooms" },
+  { key: "records", label: "청소 기록", href: "/admin/records" },
   { key: "settings", label: "설정", href: "/admin/settings" },
   { key: "qr", label: "QR 코드", href: "/admin/qr" },
 ];
@@ -31,7 +41,7 @@ export default function AdminNav({ active }: { active: Tab }) {
           CREW · ADMIN
         </div>
       </div>
-      <div className="flex items-center gap-8 text-[13.5px]">
+      <div className="flex items-center gap-5 text-[13px] flex-wrap">
         {TABS.map((tab) => (
           <Link
             key={tab.key}

@@ -1,10 +1,13 @@
-# dimension-crew 설정 가이드 (1-1 출퇴근 단계)
+# dimension-crew 설정 가이드 (1-1 출퇴근 + 1-2 객실 청소)
 
 ## 1. Supabase 프로젝트 생성
 
 1. https://supabase.com 에서 새 프로젝트 생성
-2. **SQL Editor**에서 `supabase/schema.sql` 내용을 그대로 실행
-3. **Project Settings > API**에서 `Project URL`과 `service_role` 키를 복사
+2. **SQL Editor**에서 `supabase/schema.sql` 내용을 그대로 실행 (1-1, 출퇴근)
+3. **SQL Editor**에서 `supabase/schema_rooms.sql` 내용을 그대로 실행 (1-2, 객실 청소 — 객실 16개실 시드 데이터 포함)
+4. **Project Settings > API**에서 `Project URL`과 `service_role` 키를 복사
+
+⚠️ 사진 저장용 Storage 버킷(`task-photos`)은 앱이 첫 사진 업로드 시 자동으로 생성합니다. 별도로 만들 필요 없습니다.
 
 ## 2. Google 서비스 계정 (Sheets 연동)
 
@@ -58,6 +61,6 @@ npm run dev
 
 ## 참고
 
-- 이번 단계(1-1)는 로그인/QR 출퇴근/GPS 확인/급여 계산·캘린더/어드민(계정·시급·설정·근무 승인)까지만 포함합니다.
-- 객실 청소 체크·사진, 슬랙 연동은 다음 단계(1-2, 2, 3)에서 진행합니다. 자세한 내용은 `docs/기획서.md` 참고.
+- 1-1(로그인/QR 출퇴근/GPS 확인/급여 계산·캘린더/어드민 계정·시급·설정·근무 승인)과 1-2(객실 청소 체크·사진, 객실/배정/기록 관리)까지 포함합니다.
+- 슬랙 연동은 다음 단계(2, 3)에서 진행합니다. 자세한 내용은 `docs/기획서.md` 참고.
 - 시크릿(Supabase 키, Google 서비스 계정 JSON)은 절대 Git에 커밋하지 마세요.

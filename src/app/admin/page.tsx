@@ -53,6 +53,14 @@ export default function AdminDashboardPage() {
     load();
   }
 
+  async function handleDelete(id: string) {
+    if (!confirm("이 출퇴근 기록을 삭제할까요? 구글시트에 이미 기록된 행은 자동으로 지워지지 않습니다.")) {
+      return;
+    }
+    await fetch(`/api/admin/shifts/${id}`, { method: "DELETE" });
+    load();
+  }
+
   return (
     <div className="min-h-screen bg-bg flex flex-col">
       <AdminNav active="dashboard" />
@@ -125,18 +133,21 @@ export default function AdminDashboardPage() {
                 <th className="px-4 py-3 text-[11px] tracking-[0.1em] text-muted uppercase font-semibold border-b border-line">
                   시트
                 </th>
+                <th className="px-4 py-3 text-[11px] tracking-[0.1em] text-muted uppercase font-semibold border-b border-line">
+                  작업
+                </th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-6 text-center text-muted">
+                  <td colSpan={10} className="px-4 py-6 text-center text-muted">
                     불러오는 중...
                   </td>
                 </tr>
               ) : shifts.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-6 text-center text-muted">
+                  <td colSpan={10} className="px-4 py-6 text-center text-muted">
                     기록이 없습니다.
                   </td>
                 </tr>
@@ -188,6 +199,11 @@ export default function AdminDashboardPage() {
                       ) : (
                         <span className="text-brick">실패</span>
                       )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <button onClick={() => handleDelete(s.id)} className="text-brick underline">
+                        삭제
+                      </button>
                     </td>
                   </tr>
                 ))

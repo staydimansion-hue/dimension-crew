@@ -13,6 +13,12 @@ export default function Home() {
           출근 / 퇴근 체크
         </Link>
         <Link
+          href="/rooms"
+          className="border border-line rounded-[10px] py-3.5 font-semibold text-center text-[15px] bg-card"
+        >
+          오늘의 청소 목록
+        </Link>
+        <Link
           href="/calendar"
           className="border border-line rounded-[10px] py-3.5 font-semibold text-center text-[15px] bg-card"
         >
