@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import Link from "next/link";
+import AdminNav from "@/components/AdminNav";
 
 type Staff = {
   id: string;
@@ -84,7 +84,7 @@ export default function AdminStaffPage() {
     });
     const data = await res.json();
     if (data.belowMinWage) {
-      setNotice(`⚠️ ${staff.name}님 시급이 최저시급보다 낮습니다. 확인해주세요.`);
+      setNotice(`⚠ ${staff.name}님 시급이 최저시급보다 낮습니다. 확인해주세요.`);
     } else {
       setNotice(`${staff.name}님 시급이 오늘부터 ${hourlyWage.toLocaleString()}원으로 변경됩니다.`);
     }
@@ -92,115 +92,117 @@ export default function AdminStaffPage() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 px-4 py-8">
-      <div className="max-w-3xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl font-bold">직원 관리</h1>
-          <Link href="/admin" className="text-blue-600 underline text-sm">
-            출퇴근 기록으로
-          </Link>
+    <div className="min-h-screen bg-bg flex flex-col">
+      <AdminNav active="staff" />
+      <div className="flex-1 px-10 sm:px-14 py-10">
+        <div className="mb-6">
+          <h1 className="text-[22px] font-bold">직원 관리</h1>
+          <div className="w-7 h-0.5 bg-accent mt-2" />
         </div>
 
         <form
           onSubmit={handleCreate}
-          className="bg-white rounded-2xl shadow-md p-5 mb-6 grid grid-cols-1 sm:grid-cols-4 gap-3 items-end"
+          className="bg-card border border-line rounded-2xl p-6 mb-6 grid grid-cols-1 sm:grid-cols-4 gap-5 items-end"
         >
-          <label className="text-sm">
-            이름
+          <label className="flex flex-col gap-2">
+            <span className="text-[10.5px] tracking-[0.1em] text-muted uppercase">이름</span>
             <input
-              className="block w-full border border-neutral-300 rounded-lg px-3 py-2 mt-1"
+              className="border-0 border-b border-line bg-transparent text-[14px] py-1.5 outline-none focus:border-accent"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
             />
           </label>
-          <label className="text-sm">
-            전화번호
+          <label className="flex flex-col gap-2">
+            <span className="text-[10.5px] tracking-[0.1em] text-muted uppercase">전화번호</span>
             <input
-              className="block w-full border border-neutral-300 rounded-lg px-3 py-2 mt-1"
+              className="border-0 border-b border-line bg-transparent text-[14px] py-1.5 outline-none focus:border-accent"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="- 없이"
+              placeholder="010 0000 0000"
               required
             />
           </label>
-          <label className="text-sm">
-            시급(원)
+          <label className="flex flex-col gap-2">
+            <span className="text-[10.5px] tracking-[0.1em] text-muted uppercase">시급(원)</span>
             <input
               type="number"
-              className="block w-full border border-neutral-300 rounded-lg px-3 py-2 mt-1"
+              className="border-0 border-b border-line bg-transparent text-[14px] py-1.5 outline-none focus:border-accent"
               value={hourlyWage}
               onChange={(e) => setHourlyWage(e.target.value)}
               required
             />
           </label>
-          <button className="bg-neutral-900 text-white rounded-lg px-4 py-2 text-sm h-fit">
+          <button className="bg-ink text-bg rounded-lg px-5 py-3 text-[13px] font-semibold h-fit whitespace-nowrap">
             직원 추가
           </button>
         </form>
 
-        {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
-        {notice && <p className="text-sm text-green-700 mb-3">{notice}</p>}
+        {error && <p className="text-sm text-brick mb-3">{error}</p>}
+        {notice && <p className="text-sm text-sage mb-3">{notice}</p>}
 
-        <div className="bg-white rounded-2xl shadow-md overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="bg-card border border-line rounded-2xl overflow-x-auto">
+          <table className="w-full text-[13.5px]">
             <thead>
-              <tr className="border-b border-neutral-200 text-left">
-                <th className="px-4 py-3">이름</th>
-                <th className="px-4 py-3">전화번호</th>
-                <th className="px-4 py-3">현재 시급</th>
-                <th className="px-4 py-3">시급 변경(오늘부터)</th>
-                <th className="px-4 py-3">상태</th>
-                <th className="px-4 py-3">작업</th>
+              <tr className="text-left">
+                {["이름", "전화번호", "현재 시급", "시급 변경 (오늘부터)", "상태", "작업"].map(
+                  (h) => (
+                    <th
+                      key={h}
+                      className="px-4 py-3 text-[11px] tracking-[0.1em] text-muted uppercase font-semibold border-b border-line"
+                    >
+                      {h}
+                    </th>
+                  )
+                )}
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-6 text-center text-neutral-400">
+                  <td colSpan={6} className="px-4 py-6 text-center text-muted">
                     불러오는 중...
                   </td>
                 </tr>
               ) : (
                 staffList.map((s) => (
-                  <tr key={s.id} className="border-b border-neutral-100">
-                    <td className="px-4 py-3">{s.name}</td>
-                    <td className="px-4 py-3">{s.phone}</td>
+                  <tr key={s.id} className="border-b border-line last:border-0">
+                    <td className="px-4 py-3 font-semibold">{s.name}</td>
+                    <td className="px-4 py-3 text-muted">{s.phone}</td>
                     <td className="px-4 py-3">
                       {s.hourly_wage != null ? `${s.hourly_wage.toLocaleString()}원` : "-"}
                     </td>
-                    <td className="px-4 py-3 flex gap-2 items-center">
-                      <input
-                        type="number"
-                        placeholder="새 시급"
-                        className="w-24 border border-neutral-200 rounded px-2 py-1"
-                        value={wageDrafts[s.id] ?? ""}
-                        onChange={(e) =>
-                          setWageDrafts((prev) => ({ ...prev, [s.id]: e.target.value }))
-                        }
-                      />
-                      <button
-                        onClick={() => updateWage(s)}
-                        className="text-blue-600 underline text-xs"
-                      >
-                        변경
-                      </button>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="number"
+                          placeholder="새 시급"
+                          className="w-24 border border-line rounded px-2 py-1.5 bg-bg"
+                          value={wageDrafts[s.id] ?? ""}
+                          onChange={(e) =>
+                            setWageDrafts((prev) => ({ ...prev, [s.id]: e.target.value }))
+                          }
+                        />
+                        <button
+                          onClick={() => updateWage(s)}
+                          className="text-accent underline text-xs whitespace-nowrap"
+                        >
+                          변경
+                        </button>
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       {s.is_active ? (
-                        <span className="text-green-600">재직중</span>
+                        <span className="text-sage">재직중</span>
                       ) : (
-                        <span className="text-neutral-400">비활성</span>
+                        <span className="text-muted">비활성</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 space-x-3">
-                      <button
-                        onClick={() => toggleActive(s)}
-                        className="text-blue-600 underline"
-                      >
+                    <td className="px-4 py-3 space-x-3 whitespace-nowrap">
+                      <button onClick={() => toggleActive(s)} className="text-ink underline">
                         {s.is_active ? "비활성화" : "활성화"}
                       </button>
-                      <button onClick={() => resetPin(s)} className="text-neutral-500 underline">
+                      <button onClick={() => resetPin(s)} className="text-muted underline">
                         PIN 초기화
                       </button>
                     </td>

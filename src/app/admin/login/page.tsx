@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import BrandKicker from "@/components/BrandKicker";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -35,31 +36,40 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-neutral-50 px-4">
-      <div className="w-full max-w-sm bg-white rounded-2xl shadow-md p-6">
-        <h1 className="text-xl font-bold text-center mb-6">관리자 로그인</h1>
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <input
-            type="text"
-            placeholder="관리자 아이디"
-            className="w-full border border-neutral-300 rounded-lg px-4 py-3 text-base"
-            value={loginId}
-            onChange={(e) => setLoginId(e.target.value)}
-            required
-          />
-          <input
-            type="password"
-            placeholder="비밀번호"
-            className="w-full border border-neutral-300 rounded-lg px-4 py-3 text-base"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          {error && <p className="text-sm text-red-600">{error}</p>}
+    <div className="min-h-screen flex flex-col items-center justify-center bg-bg px-4">
+      <BrandKicker />
+      <div className="w-full max-w-sm bg-card border border-line rounded-2xl px-7 py-8">
+        <h1 className="text-[21px] font-bold text-center mb-6">관리자 로그인</h1>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <label className="flex flex-col gap-2">
+            <span className="text-[11px] tracking-[0.15em] text-muted uppercase">
+              관리자 아이디
+            </span>
+            <input
+              type="text"
+              className="border-0 border-b border-line bg-transparent text-base py-1.5 outline-none focus:border-accent"
+              value={loginId}
+              onChange={(e) => setLoginId(e.target.value)}
+              required
+            />
+          </label>
+          <label className="flex flex-col gap-2">
+            <span className="text-[11px] tracking-[0.15em] text-muted uppercase">
+              비밀번호
+            </span>
+            <input
+              type="password"
+              className="border-0 border-b border-line bg-transparent text-base py-1.5 outline-none focus:border-accent"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </label>
+          {error && <p className="text-sm text-brick">{error}</p>}
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-neutral-900 text-white rounded-lg py-3 font-semibold disabled:opacity-50"
+            className="bg-accent text-bg rounded-[10px] py-3.5 font-semibold text-[15px] mt-1 disabled:opacity-50"
           >
             {loading ? "로그인 중..." : "로그인"}
           </button>

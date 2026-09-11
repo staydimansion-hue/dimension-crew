@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import Link from "next/link";
+import AdminNav from "@/components/AdminNav";
 
 type Settings = {
   geo_center_lat: number | null;
@@ -73,87 +73,98 @@ export default function AdminSettingsPage() {
     load();
   }
 
-  if (!settings) {
-    return <div className="min-h-screen bg-neutral-50 px-4 py-8" />;
-  }
-
   return (
-    <div className="min-h-screen bg-neutral-50 px-4 py-8">
-      <div className="max-w-md mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl font-bold">설정</h1>
-          <Link href="/admin" className="text-blue-600 underline text-sm">
-            돌아가기
-          </Link>
-        </div>
-
-        <form onSubmit={handleSave} className="bg-white rounded-2xl shadow-md p-5 space-y-4">
-          <div>
-            <p className="text-sm font-semibold mb-2">근무지 GPS 중심 좌표</p>
-            <div className="flex gap-2">
-              <input
-                placeholder="위도"
-                className="flex-1 border border-neutral-300 rounded-lg px-3 py-2"
-                value={lat}
-                onChange={(e) => setLat(e.target.value)}
-              />
-              <input
-                placeholder="경도"
-                className="flex-1 border border-neutral-300 rounded-lg px-3 py-2"
-                value={lng}
-                onChange={(e) => setLng(e.target.value)}
-              />
+    <div className="min-h-screen bg-bg flex flex-col">
+      <AdminNav active="settings" />
+      {settings && (
+        <div className="flex-1 px-10 sm:px-14 py-10 flex justify-center">
+          <div className="w-full max-w-[480px]">
+            <div className="mb-6">
+              <h1 className="text-[22px] font-bold">설정</h1>
+              <div className="w-7 h-0.5 bg-accent mt-2" />
             </div>
-            <button
-              type="button"
-              onClick={useCurrentLocation}
-              className="text-xs text-blue-600 underline mt-2"
+
+            <form
+              onSubmit={handleSave}
+              className="bg-card border border-line rounded-2xl px-8 py-8 flex flex-col gap-6"
             >
-              지금 이 위치(숙소)를 좌표로 사용
-            </button>
+              <div className="flex flex-col gap-2.5">
+                <span className="text-[10.5px] tracking-[0.1em] text-muted uppercase">
+                  근무지 GPS 중심 좌표
+                </span>
+                <div className="flex gap-4">
+                  <input
+                    placeholder="위도"
+                    className="flex-1 border-0 border-b border-line bg-transparent text-[14.5px] py-2 outline-none focus:border-accent"
+                    value={lat}
+                    onChange={(e) => setLat(e.target.value)}
+                  />
+                  <input
+                    placeholder="경도"
+                    className="flex-1 border-0 border-b border-line bg-transparent text-[14.5px] py-2 outline-none focus:border-accent"
+                    value={lng}
+                    onChange={(e) => setLng(e.target.value)}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={useCurrentLocation}
+                  className="text-xs text-accent underline mt-0.5 self-start"
+                >
+                  지금 이 위치(숙소)를 좌표로 사용
+                </button>
+              </div>
+
+              <label className="flex flex-col gap-2">
+                <span className="text-[10.5px] tracking-[0.1em] text-muted uppercase">
+                  허용 반경(m)
+                </span>
+                <input
+                  type="number"
+                  className="border-0 border-b border-line bg-transparent text-[14.5px] py-2 outline-none focus:border-accent"
+                  value={radius}
+                  onChange={(e) => setRadius(e.target.value)}
+                  required
+                />
+              </label>
+
+              <label className="flex flex-col gap-2">
+                <span className="text-[10.5px] tracking-[0.1em] text-muted uppercase">
+                  공제율 (예: 0.033 = 3.3%)
+                </span>
+                <input
+                  type="number"
+                  step="0.001"
+                  className="border-0 border-b border-line bg-transparent text-[14.5px] py-2 outline-none focus:border-accent"
+                  value={deductionRate}
+                  onChange={(e) => setDeductionRate(e.target.value)}
+                  required
+                />
+              </label>
+
+              <label className="flex flex-col gap-2">
+                <span className="text-[10.5px] tracking-[0.1em] text-muted uppercase">
+                  최저시급 (경고 기준, 비워두면 경고 안 함)
+                </span>
+                <input
+                  type="number"
+                  className="border-0 border-b border-line bg-transparent text-[14.5px] py-2 outline-none focus:border-accent"
+                  value={minWage}
+                  onChange={(e) => setMinWage(e.target.value)}
+                  placeholder="비워두면 경고 없음"
+                />
+              </label>
+
+              {error && <p className="text-sm text-brick">{error}</p>}
+              {notice && <p className="text-sm text-sage">{notice}</p>}
+
+              <button className="bg-accent text-bg rounded-[10px] py-3.5 font-semibold text-[15px] mt-1">
+                저장
+              </button>
+            </form>
           </div>
-
-          <label className="block text-sm">
-            허용 반경(m)
-            <input
-              type="number"
-              className="block w-full border border-neutral-300 rounded-lg px-3 py-2 mt-1"
-              value={radius}
-              onChange={(e) => setRadius(e.target.value)}
-              required
-            />
-          </label>
-
-          <label className="block text-sm">
-            공제율 (예: 0.033 = 3.3%)
-            <input
-              type="number"
-              step="0.001"
-              className="block w-full border border-neutral-300 rounded-lg px-3 py-2 mt-1"
-              value={deductionRate}
-              onChange={(e) => setDeductionRate(e.target.value)}
-              required
-            />
-          </label>
-
-          <label className="block text-sm">
-            최저시급 (경고 기준, 비워두면 경고 안 함)
-            <input
-              type="number"
-              className="block w-full border border-neutral-300 rounded-lg px-3 py-2 mt-1"
-              value={minWage}
-              onChange={(e) => setMinWage(e.target.value)}
-            />
-          </label>
-
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          {notice && <p className="text-sm text-green-700">{notice}</p>}
-
-          <button className="w-full bg-neutral-900 text-white rounded-lg py-3 font-semibold">
-            저장
-          </button>
-        </form>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

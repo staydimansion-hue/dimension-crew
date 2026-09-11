@@ -27,6 +27,42 @@ async function submitToggle(): Promise<Result> {
   return data as Result;
 }
 
+function Card({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="w-full bg-card border border-line rounded-2xl px-7 py-10 min-h-[320px] flex flex-col items-center justify-center gap-4">
+      {children}
+    </div>
+  );
+}
+
+function BackArrowIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M15 5L8 12L15 19"
+        stroke="#2b241d"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M4 12.5L9.5 18L20 6"
+        stroke="#2b241d"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function CheckinFlow({ name }: { name: string }) {
   const [status, setStatus] = useState<"loading" | "confirmCheckout" | "done" | "error">(
     "loading"
@@ -70,54 +106,87 @@ function CheckinFlow({ name }: { name: string }) {
   }, [doCheckIn]);
 
   if (status === "loading") {
-    return <p className="text-neutral-400 text-sm">처리 중...</p>;
+    return (
+      <Card>
+        <p className="text-muted text-sm">처리 중...</p>
+      </Card>
+    );
   }
 
   if (status === "confirmCheckout") {
     return (
-      <div className="text-center">
-        <p className="text-lg font-semibold mb-4">{name}님, 퇴근하시겠습니까?</p>
+      <Card>
+        <div className="w-14 h-14 rounded-full border-[1.6px] border-ink flex items-center justify-center">
+          <BackArrowIcon />
+        </div>
+        <div className="text-center">
+          <div className="text-[19px] font-bold">{name}님, 퇴근하시겠습니까?</div>
+        </div>
         <button
           onClick={doCheckOut}
-          className="bg-neutral-900 text-white rounded-lg px-6 py-3 font-semibold"
+          className="w-full bg-accent text-bg rounded-[10px] py-3.5 font-semibold text-[15px] mt-2"
         >
           퇴근하기
         </button>
-      </div>
+      </Card>
     );
   }
 
   if (status === "error") {
     return (
-      <div className="text-center">
-        <p className="text-red-600 mb-3">{error}</p>
-        <button onClick={() => window.location.reload()} className="text-sm underline">
+      <Card>
+        <p className="text-brick text-sm">{error}</p>
+        <button onClick={() => window.location.reload()} className="text-sm underline text-muted">
           다시 시도
         </button>
-      </div>
+      </Card>
     );
   }
 
   if (!result) return null;
 
+  const isCheckOut = result.type === "check_out";
+
   return (
-    <div className="text-center">
-      <div className="text-3xl mb-3">{result.type === "check_in" ? "✅" : "👋"}</div>
-      <p className="text-lg font-semibold">
-        {result.name}님 {result.type === "check_in" ? "출근 완료" : "퇴근 완료"}
-      </p>
-      <p className="text-sm text-neutral-500 mt-1">{result.time}</p>
+    <Card>
+      <div
+        className={`w-16 h-16 rounded-full flex items-center justify-center ${
+          isCheckOut ? "bg-[#ece2d0]" : "bg-sage-tint"
+        }`}
+      >
+        <CheckIcon />
+      </div>
+      <div className="text-center">
+        <div className="text-[21px] font-bold">
+          {result.name}님 {isCheckOut ? "퇴근" : "출근"} 완료
+        </div>
+        <div className="text-[13px] text-muted mt-1.5">{result.time}</div>
+      </div>
       {result.type === "check_out" && (
-        <p className="text-sm text-neutral-500 mt-1">
-          근무시간 {result.hoursWorked}시간 · {result.amount.toLocaleString()}원
-        </p>
+        <div className="flex gap-5 pt-4 mt-1 border-t border-line w-full justify-center">
+          <div className="text-center">
+            <div className="font-display text-xl font-bold">{result.hoursWorked}h</div>
+            <div className="text-[10.5px] tracking-[0.1em] text-muted uppercase mt-0.5">
+              근무시간
+            </div>
+          </div>
+          <div className="w-px bg-line" />
+          <div className="text-center">
+            <div className="font-display text-xl font-bold">
+              {result.amount.toLocaleString()}
+            </div>
+            <div className="text-[10.5px] tracking-[0.1em] text-muted uppercase mt-0.5">
+              금액
+            </div>
+          </div>
+        </div>
       )}
       {result.outOfRange && (
-        <p className="text-sm text-amber-600 mt-2">
-          ⚠️ 근무지 반경 밖에서 처리되어 관리자 확인이 필요합니다.
-        </p>
+        <div className="mt-2 w-full bg-brick-tint border border-[#d9b9a4] rounded-lg px-3 py-2.5 text-xs text-brick leading-relaxed">
+          ⚠ 근무지 반경 밖에서 처리되어 관리자 확인이 필요해요
+        </div>
       )}
-    </div>
+    </Card>
   );
 }
 

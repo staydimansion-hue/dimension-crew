@@ -1,26 +1,38 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ink: #2b241d;
+  --muted: #8a7d6c;
+  --bg: #f6f0e6;
+  --card: #fffdf9;
+  --line: #ddd1ba;
+  --accent: #b5652b;
+  --accent-hover: #9c5527;
+  --sage: #5c6b52;
+  --sage-tint: #e3e8dd;
+  --brick: #8a4b3f;
+  --brick-tint: #f4e6df;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-bg: var(--bg);
+  --color-card: var(--card);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-sage: var(--sage);
+  --color-sage-tint: var(--sage-tint);
+  --color-brick: var(--brick);
+  --color-brick-tint: var(--brick-tint);
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system,
+    BlinkMacSystemFont, "Noto Sans KR", sans-serif;
+  --font-display: var(--font-bricolage), "Pretendard Variable", sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
 }
