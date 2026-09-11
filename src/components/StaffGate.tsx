@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import BrandKicker from "./BrandKicker";
+import PasswordField from "./PasswordField";
 
 type Props = {
   children: (name: string) => ReactNode;
@@ -91,21 +92,16 @@ export default function StaffGate({
                   required
                 />
               </label>
-              <label className="flex flex-col gap-2">
-                <span className="text-[11px] tracking-[0.15em] text-muted uppercase">
-                  PIN 4자리
-                </span>
-                <input
-                  type="password"
-                  inputMode="numeric"
-                  placeholder="••••"
-                  maxLength={4}
-                  className="border-0 border-b border-line bg-transparent text-base py-1.5 tracking-[0.5em] outline-none focus:border-accent"
-                  value={pin}
-                  onChange={(e) => setPin(e.target.value)}
-                  required
-                />
-              </label>
+              <PasswordField
+                label="PIN 4자리"
+                value={pin}
+                onChange={setPin}
+                inputMode="numeric"
+                placeholder="••••"
+                maxLength={4}
+                wideSpacing
+                required
+              />
               {error && <p className="text-sm text-brick">{error}</p>}
               <button
                 type="submit"

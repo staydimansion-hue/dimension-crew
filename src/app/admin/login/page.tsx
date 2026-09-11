@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import BrandKicker from "@/components/BrandKicker";
+import PasswordField from "@/components/PasswordField";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -53,18 +54,13 @@ export default function AdminLoginPage() {
               required
             />
           </label>
-          <label className="flex flex-col gap-2">
-            <span className="text-[11px] tracking-[0.15em] text-muted uppercase">
-              비밀번호
-            </span>
-            <input
-              type="password"
-              className="border-0 border-b border-line bg-transparent text-base py-1.5 outline-none focus:border-accent"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </label>
+          <PasswordField
+            label="비밀번호"
+            value={password}
+            onChange={setPassword}
+            autoComplete="current-password"
+            required
+          />
           {error && <p className="text-sm text-brick">{error}</p>}
           <button
             type="submit"
