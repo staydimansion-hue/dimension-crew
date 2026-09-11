@@ -1,0 +1,9 @@
+{
+  "name": "dimension-crew 출퇴근",
+  "short_name": "출퇴근",
+  "start_url": "/checkin",
+  "display": "standalone",
+  "background_color": "#f5f5f5",
+  "theme_color": "#171717",
+  "icons": []
+}
