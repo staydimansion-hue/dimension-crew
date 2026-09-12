@@ -30,20 +30,6 @@ function Card({ children }: { children: React.ReactNode }) {
   );
 }
 
-function BackArrowIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-      <path
-        d="M15 5L8 12L15 19"
-        stroke="#2b241d"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 function CheckIcon() {
   return (
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
@@ -151,9 +137,6 @@ function CheckinFlow({
   if (status === "confirmCheckout") {
     return (
       <Card>
-        <div className="w-14 h-14 rounded-full border-[1.6px] border-ink flex items-center justify-center">
-          <BackArrowIcon />
-        </div>
         <div className="text-center">
           <div className="text-[19px] font-bold">{name}님, 퇴근하시겠습니까?</div>
         </div>
