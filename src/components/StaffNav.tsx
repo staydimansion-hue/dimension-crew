@@ -5,7 +5,7 @@ import Link from "next/link";
 type Tab = "home" | "rooms" | "calendar";
 
 const TABS: { key: Tab; label: string; href: string }[] = [
-  { key: "home", label: "홈", href: "/" },
+  { key: "home", label: "홈", href: "/checkin" },
   { key: "rooms", label: "청소", href: "/rooms" },
   { key: "calendar", label: "캘린더", href: "/calendar" },
 ];
