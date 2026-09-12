@@ -14,6 +14,8 @@ type ShiftRow = {
   sheet_row: number | null;
   clock_in_out_of_range: boolean | null;
   clock_out_out_of_range: boolean | null;
+  clock_in_distance_m: number | null;
+  clock_out_distance_m: number | null;
   staff: { name: string } | { name: string }[] | null;
 };
 
@@ -172,7 +174,12 @@ export default function AdminDashboardPage() {
                     </td>
                     <td className="px-4 py-3">
                       {s.clock_in_out_of_range || s.clock_out_out_of_range ? (
-                        <span className="text-brick">범위 밖</span>
+                        <span className="text-brick">
+                          범위 밖
+                          {s.clock_in_distance_m != null && (
+                            <span className="text-muted"> ({Math.round(s.clock_in_distance_m)}m)</span>
+                          )}
+                        </span>
                       ) : (
                         <span className="text-sage">정상</span>
                       )}

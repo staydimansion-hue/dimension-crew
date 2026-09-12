@@ -19,11 +19,17 @@ export async function POST(request: Request) {
   const settings = await getSettings();
   let distance: number | null = null;
   let outOfRange: boolean | null = null;
-  if (lat != null && lng != null && settings.geo_center_lat != null && settings.geo_center_lng != null) {
-    distance = Math.round(
-      distanceMeters(lat, lng, settings.geo_center_lat, settings.geo_center_lng) * 10
-    ) / 10;
-    outOfRange = distance > settings.geo_radius_m;
+  if (settings.geo_center_lat != null && settings.geo_center_lng != null) {
+    if (lat != null && lng != null) {
+      distance = Math.round(
+        distanceMeters(lat, lng, settings.geo_center_lat, settings.geo_center_lng) * 10
+      ) / 10;
+      outOfRange = distance > settings.geo_radius_m;
+    } else {
+      // 위치 정보를 아예 받지 못한 경우(권한 거부·GPS 실패 등) — 범위 밖과 동일하게 관리자 확인이 필요하다.
+      // 이걸 "정상"으로 두면 QR 링크만 있으면 어디서든 위치 확인 없이 체크인될 수 있다.
+      outOfRange = true;
+    }
   }
 
   const now = new Date();

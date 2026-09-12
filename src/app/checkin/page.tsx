@@ -183,7 +183,7 @@ function CheckinFlow({ name }: { name: string }) {
       )}
       {result.outOfRange && (
         <div className="mt-2 w-full bg-brick-tint border border-[#d9b9a4] rounded-lg px-3 py-2.5 text-xs text-brick leading-relaxed">
-          ⚠ 근무지 반경 밖에서 처리되어 관리자 확인이 필요해요
+          ⚠ 근무지 위치가 확인되지 않아 관리자 확인이 필요해요
         </div>
       )}
     </Card>
