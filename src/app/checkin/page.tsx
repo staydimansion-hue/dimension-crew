@@ -238,7 +238,7 @@ function CheckinFlow({ name }: { name: string }) {
 
 export default function CheckinPage() {
   return (
-    <StaffGate cardClassName="w-full max-w-md">
+    <StaffGate cardClassName="w-full max-w-md" activeTab="home">
       {(name) => <CheckinFlow name={name} />}
     </StaffGate>
   );
