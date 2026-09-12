@@ -39,7 +39,7 @@ export default function AssignedRoomsPreview() {
         ))}
       </div>
       <Link href="/rooms" className="text-[12.5px] text-accent underline">
-        청소 탭에서 완료 처리하기
+        청소하러 가기
       </Link>
     </div>
   );

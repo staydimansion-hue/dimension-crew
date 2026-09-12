@@ -34,10 +34,6 @@ function HomeFlow({ name }: { name: string }) {
       </Link>
 
       {hasOpenShift && <AssignedRoomsPreview />}
-
-      <Link href="/admin/login" className="text-muted text-center text-sm mt-2">
-        관리자
-      </Link>
     </div>
   );
 }
