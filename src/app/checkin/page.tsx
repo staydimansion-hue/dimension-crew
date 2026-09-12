@@ -1,50 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
 import StaffGate from "@/components/StaffGate";
-
-type AssignedRoom = { id: string; number: string; type_name: string };
-
-function AssignedRoomsPreview() {
-  const [rooms, setRooms] = useState<AssignedRoom[] | null>(null);
-
-  useEffect(() => {
-    fetch("/api/rooms/today")
-      .then((res) => res.json())
-      .then((data) => {
-        const list = (data.myTasks ?? [])
-          .map((t: { rooms: AssignedRoom | AssignedRoom[] | null }) =>
-            Array.isArray(t.rooms) ? t.rooms[0] : t.rooms
-          )
-          .filter(Boolean);
-        setRooms(list);
-      });
-  }, []);
-
-  if (!rooms || rooms.length === 0) return null;
-
-  return (
-    <div className="w-full bg-card border border-line rounded-2xl px-6 py-5">
-      <div className="text-[11px] tracking-[0.1em] text-muted uppercase mb-2.5">
-        오늘 배정된 객실
-      </div>
-      <div className="flex flex-wrap gap-2 mb-3">
-        {rooms.map((r) => (
-          <span
-            key={r.id}
-            className="text-[12.5px] bg-bg border border-line rounded-full px-3 py-1"
-          >
-            {r.number}호 · {r.type_name}
-          </span>
-        ))}
-      </div>
-      <Link href="/rooms" className="text-[12.5px] text-accent underline">
-        청소 탭에서 완료 처리하기
-      </Link>
-    </div>
-  );
-}
+import QrScanner from "@/components/QrScanner";
+import AssignedRoomsPreview from "@/components/AssignedRoomsPreview";
 
 type Result =
   | { type: "check_in"; name: string; time: string }
@@ -101,10 +60,31 @@ function CheckIcon() {
 
 function CheckinFlow({ name }: { name: string }) {
   const [status, setStatus] = useState<
-    "loading" | "confirmCheckin" | "confirmCheckout" | "processing" | "done" | "error"
-  >("loading");
+    | "loadingToken"
+    | "scanning"
+    | "confirmCheckin"
+    | "confirmCheckout"
+    | "processing"
+    | "done"
+    | "error"
+  >("loadingToken");
+  const [qrToken, setQrToken] = useState("");
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetch("/api/staff/me")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.qrToken) {
+          setQrToken(data.qrToken);
+          setStatus("scanning");
+        } else {
+          setError("QR 인식 정보를 불러오지 못했습니다.");
+          setStatus("error");
+        }
+      });
+  }, []);
 
   const refreshStatus = useCallback(() => {
     fetch("/api/attendance/status")
@@ -113,10 +93,6 @@ function CheckinFlow({ name }: { name: string }) {
         setStatus(data.hasOpenShift ? "confirmCheckout" : "confirmCheckin");
       });
   }, []);
-
-  useEffect(() => {
-    refreshStatus();
-  }, [refreshStatus]);
 
   async function handleToggle() {
     setStatus("processing");
@@ -130,10 +106,18 @@ function CheckinFlow({ name }: { name: string }) {
     }
   }
 
-  if (status === "loading" || status === "processing") {
+  if (status === "loadingToken" || status === "processing") {
     return (
       <Card>
         <p className="text-muted text-sm">처리 중...</p>
+      </Card>
+    );
+  }
+
+  if (status === "scanning") {
+    return (
+      <Card>
+        <QrScanner expectedToken={qrToken} onScanned={refreshStatus} />
       </Card>
     );
   }
