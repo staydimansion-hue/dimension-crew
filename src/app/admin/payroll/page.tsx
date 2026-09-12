@@ -95,8 +95,17 @@ export default function AdminPayrollPage() {
           >
             ←
           </button>
-          <div className="text-[14px] font-semibold flex-1 text-center truncate">
-            {data ? `${data.from} ~ ${data.to} (${data.label})` : "불러오는 중..."}
+          <div className="flex-1 text-center min-w-0">
+            {data ? (
+              <>
+                <div className="text-[16px] font-bold truncate">{data.label}</div>
+                <div className="text-[11.5px] text-muted truncate">
+                  {data.from} ~ {data.to} 근무분
+                </div>
+              </>
+            ) : (
+              <div className="text-[14px] font-semibold">불러오는 중...</div>
+            )}
           </div>
           <button
             onClick={() => setCycleKey((k) => shiftCycle(k, 1))}
