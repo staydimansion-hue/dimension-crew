@@ -30,15 +30,15 @@ function Card({ children }: { children: React.ReactNode }) {
   );
 }
 
-function CheckIcon() {
+function PersonIcon() {
   return (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="7.5" r="3.5" stroke="#2b241d" strokeWidth="1.8" />
       <path
-        d="M4 12.5L9.5 18L20 6"
+        d="M4.5 20c0-4.14 3.36-7 7.5-7s7.5 2.86 7.5 7"
         stroke="#2b241d"
         strokeWidth="1.8"
         strokeLinecap="round"
-        strokeLinejoin="round"
       />
     </svg>
   );
@@ -119,7 +119,7 @@ function CheckinFlow({
     return (
       <Card>
         <div className="w-14 h-14 rounded-full border-[1.6px] border-ink flex items-center justify-center">
-          <CheckIcon />
+          <PersonIcon />
         </div>
         <div className="text-center">
           <div className="text-[19px] font-bold">{name}님, 출근하셨나요?</div>
@@ -128,7 +128,7 @@ function CheckinFlow({
           onClick={handleToggle}
           className="w-full bg-accent text-bg rounded-[10px] py-3.5 font-semibold text-[15px] mt-2"
         >
-          출근 확인
+          출근하기
         </button>
       </Card>
     );
@@ -137,6 +137,9 @@ function CheckinFlow({
   if (status === "confirmCheckout") {
     return (
       <Card>
+        <div className="w-14 h-14 rounded-full border-[1.6px] border-ink flex items-center justify-center">
+          <PersonIcon />
+        </div>
         <div className="text-center">
           <div className="text-[19px] font-bold">{name}님, 퇴근하시겠습니까?</div>
         </div>
@@ -144,7 +147,7 @@ function CheckinFlow({
           onClick={handleToggle}
           className="w-full bg-accent text-bg rounded-[10px] py-3.5 font-semibold text-[15px] mt-2"
         >
-          퇴근 확인
+          퇴근하기
         </button>
       </Card>
     );
@@ -173,7 +176,7 @@ function CheckinFlow({
             isCheckOut ? "bg-[#ece2d0]" : "bg-sage-tint"
           }`}
         >
-          <CheckIcon />
+          <PersonIcon />
         </div>
         <div className="text-center">
           <div className="text-[21px] font-bold">
