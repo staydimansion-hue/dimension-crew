@@ -22,7 +22,7 @@ export default function AdminQrPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-bg flex flex-col">
+    <div className="min-h-dvh bg-bg flex flex-col">
       <AdminNav active="qr" />
       <div className="flex-1 flex flex-col items-center justify-center gap-6 px-4 py-10 text-center">
         <div>

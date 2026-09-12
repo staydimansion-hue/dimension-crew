@@ -3,7 +3,7 @@ import BrandKicker from "@/components/BrandKicker";
 
 export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-bg px-4">
+    <div className="min-h-dvh flex flex-col items-center justify-center bg-bg px-4">
       <BrandKicker />
       <div className="flex flex-col gap-3 w-64">
         <Link

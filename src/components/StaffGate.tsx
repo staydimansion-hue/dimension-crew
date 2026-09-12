@@ -60,7 +60,7 @@ export default function StaffGate({
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-bg px-6 py-10">
+    <div className="min-h-dvh flex flex-col items-center justify-center bg-bg px-6 py-10">
       <BrandKicker />
       <div className={cardClassName}>
         {phase === "checking" && (

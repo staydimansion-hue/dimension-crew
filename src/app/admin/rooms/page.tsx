@@ -58,7 +58,7 @@ export default function AdminRoomsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-bg flex flex-col">
+    <div className="min-h-dvh bg-bg flex flex-col">
       <AdminNav active="rooms" />
       <div className="flex-1 px-10 sm:px-14 py-10">
         <div className="mb-6">

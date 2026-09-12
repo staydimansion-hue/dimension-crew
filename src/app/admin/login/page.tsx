@@ -37,7 +37,7 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-bg px-4">
+    <div className="min-h-dvh flex flex-col items-center justify-center bg-bg px-4">
       <BrandKicker />
       <div className="w-full max-w-sm bg-card border border-line rounded-2xl px-7 py-8">
         <h1 className="text-[21px] font-bold text-center mb-6">관리자 로그인</h1>

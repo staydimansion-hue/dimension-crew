@@ -64,7 +64,7 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-bg flex flex-col">
+    <div className="min-h-dvh bg-bg flex flex-col">
       <AdminNav active="dashboard" />
       <div className="flex-1 px-10 sm:px-14 py-10">
         <div className="flex items-baseline justify-between mb-6 flex-wrap gap-4">

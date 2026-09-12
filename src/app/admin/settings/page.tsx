@@ -74,7 +74,7 @@ export default function AdminSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-bg flex flex-col">
+    <div className="min-h-dvh bg-bg flex flex-col">
       <AdminNav active="settings" />
       {settings && (
         <div className="flex-1 px-10 sm:px-14 py-10 flex justify-center">
