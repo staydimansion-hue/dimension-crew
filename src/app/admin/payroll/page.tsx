@@ -90,18 +90,20 @@ export default function AdminPayrollPage() {
         <div className="flex items-center gap-3 mb-6">
           <button
             onClick={() => setCycleKey((k) => shiftCycle(k, -1))}
-            className="border border-line rounded-lg px-3 py-2 text-[13px]"
+            aria-label="이전 달"
+            className="border border-line rounded-lg w-9 h-9 shrink-0 flex items-center justify-center text-[15px]"
           >
-            ← 이전 달
+            ←
           </button>
-          <div className="text-[14px] font-semibold min-w-[220px] text-center">
+          <div className="text-[14px] font-semibold flex-1 text-center truncate">
             {data ? `${data.from} ~ ${data.to} (${data.label})` : "불러오는 중..."}
           </div>
           <button
             onClick={() => setCycleKey((k) => shiftCycle(k, 1))}
-            className="border border-line rounded-lg px-3 py-2 text-[13px]"
+            aria-label="다음 달"
+            className="border border-line rounded-lg w-9 h-9 shrink-0 flex items-center justify-center text-[15px]"
           >
-            다음 달 →
+            →
           </button>
         </div>
 
