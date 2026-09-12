@@ -6,10 +6,11 @@ import PasswordField from "./PasswordField";
 import StaffNav from "./StaffNav";
 
 type Props = {
-  children: (name: string) => ReactNode;
+  children: (name: string, refreshNavStatus: () => void) => ReactNode;
   /** 로그인 폼과 children을 감싸는 카드의 너비 클래스 (기본: 좁은 폼용) */
   cardClassName?: string;
-  /** 하단 탭 메뉴에서 활성화할 탭. 지정하면 로그인 후 화면에 하단 메뉴가 보인다. */
+  /** 하단 탭 메뉴에서 활성화할 탭. 지정하면 로그인 후 화면에 하단 메뉴가 보인다.
+   * 단, 오늘 한 번도 출근하지 않았으면 하단 메뉴는 숨긴다. */
   activeTab?: "home" | "rooms" | "calendar";
 };
 
@@ -24,6 +25,13 @@ export default function StaffGate({
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checkedInToday, setCheckedInToday] = useState(false);
+
+  function refreshNavStatus() {
+    fetch("/api/attendance/status")
+      .then((r) => r.json())
+      .then((s) => setCheckedInToday(Boolean(s.checkedInToday)));
+  }
 
   useEffect(() => {
     fetch("/api/staff/me")
@@ -32,6 +40,7 @@ export default function StaffGate({
           const data = await res.json();
           setName(data.name);
           setPhase("ready");
+          refreshNavStatus();
         } else {
           setPhase("login");
         }
@@ -63,10 +72,12 @@ export default function StaffGate({
     }
   }
 
+  const showNav = phase === "ready" && Boolean(activeTab) && checkedInToday;
+
   return (
     <div
       className={`min-h-dvh flex flex-col items-center justify-center bg-bg px-6 py-10 ${
-        phase === "ready" && activeTab ? "pb-24" : ""
+        showNav ? "pb-24" : ""
       }`}
     >
       <BrandKicker />
@@ -122,7 +133,7 @@ export default function StaffGate({
           </div>
         )}
 
-        {phase === "ready" && children(name)}
+        {phase === "ready" && children(name, refreshNavStatus)}
       </div>
       {phase === "login" && (
         <p className="mt-7 text-xs text-muted text-center leading-relaxed">
@@ -131,7 +142,7 @@ export default function StaffGate({
           매니저에게 초기화를 요청하세요
         </p>
       )}
-      {phase === "ready" && activeTab && <StaffNav active={activeTab} />}
+      {showNav && activeTab && <StaffNav active={activeTab} />}
     </div>
   );
 }

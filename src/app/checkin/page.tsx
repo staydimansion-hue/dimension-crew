@@ -58,7 +58,13 @@ function CheckIcon() {
   );
 }
 
-function CheckinFlow({ name }: { name: string }) {
+function CheckinFlow({
+  name,
+  onCheckedIn,
+}: {
+  name: string;
+  onCheckedIn: () => void;
+}) {
   const [status, setStatus] = useState<
     | "loadingToken"
     | "scanning"
@@ -100,6 +106,7 @@ function CheckinFlow({ name }: { name: string }) {
       const r = await submitToggle();
       setResult(r);
       setStatus("done");
+      if (r.type === "check_in") onCheckedIn();
     } catch (err) {
       setError(err instanceof Error ? err.message : "오류가 발생했습니다.");
       setStatus("error");
@@ -223,7 +230,9 @@ function CheckinFlow({ name }: { name: string }) {
 export default function CheckinPage() {
   return (
     <StaffGate cardClassName="w-full max-w-md" activeTab="home">
-      {(name) => <CheckinFlow name={name} />}
+      {(name, refreshNavStatus) => (
+        <CheckinFlow name={name} onCheckedIn={refreshNavStatus} />
+      )}
     </StaffGate>
   );
 }
