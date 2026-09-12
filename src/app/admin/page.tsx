@@ -34,6 +34,8 @@ export default function AdminDashboardPage() {
   const [payrollError, setPayrollError] = useState<{ id: string; message: string } | null>(
     null
   );
+  const [formatBusy, setFormatBusy] = useState(false);
+  const [formatMessage, setFormatMessage] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -69,6 +71,15 @@ export default function AdminDashboardPage() {
     load();
   }
 
+  async function handleFormatSheet() {
+    setFormatBusy(true);
+    setFormatMessage("");
+    const res = await fetch("/api/admin/format-sheet", { method: "POST" });
+    const data = await res.json();
+    setFormatBusy(false);
+    setFormatMessage(res.ok ? "시트 서식을 적용했습니다." : data.error || "실패했습니다.");
+  }
+
   async function handleDelete(id: string) {
     if (!confirm("이 출퇴근 기록을 삭제할까요? 구글시트에 이미 기록된 행은 자동으로 지워지지 않습니다.")) {
       return;
@@ -85,6 +96,16 @@ export default function AdminDashboardPage() {
           <div>
             <h1 className="text-[22px] font-bold">출퇴근 관리</h1>
             <div className="w-7 h-0.5 bg-accent mt-2" />
+            <button
+              onClick={handleFormatSheet}
+              disabled={formatBusy}
+              className="text-[11.5px] text-accent underline mt-2 disabled:opacity-50"
+            >
+              {formatBusy ? "적용 중..." : "출퇴근기록 시트 꾸미기"}
+            </button>
+            {formatMessage && (
+              <div className="text-[11.5px] text-muted mt-1">{formatMessage}</div>
+            )}
           </div>
           <div className="flex items-end gap-2.5">
             <label className="flex flex-col gap-1">

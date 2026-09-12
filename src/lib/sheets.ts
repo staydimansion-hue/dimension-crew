@@ -113,6 +113,90 @@ export async function updateCheckOutRow(params: {
 }
 
 /**
+ * QR출퇴근기록 탭에 브랜드 색상(어두운 갈색 헤더)으로 서식을 입힌다.
+ * 헤더 굵게+배경색, 헤더 고정, 열 너비, 금액/시급 숫자 서식, 옅은 테두리.
+ * 여러 번 실행해도 안전하다 (덮어쓰기만 함, 데이터는 건드리지 않음).
+ */
+export async function formatAttendanceSheet() {
+  await ensureHeaderRow();
+  const { sheets, spreadsheetId } = getSheetsClient();
+
+  const meta = await sheets.spreadsheets.get({ spreadsheetId });
+  const targetSheet = meta.data.sheets?.find(
+    (s) => s.properties?.title === SHEET_TAB_NAME
+  );
+  const sheetId = targetSheet?.properties?.sheetId;
+  if (sheetId == null) {
+    throw new Error(`"${SHEET_TAB_NAME}" 탭을 찾지 못했습니다.`);
+  }
+
+  const columnCount = HEADER_ROW.length;
+  const lightBorder = { style: "SOLID" as const, width: 1, color: { red: 0.87, green: 0.85, blue: 0.81 } };
+
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId,
+    requestBody: {
+      requests: [
+        {
+          repeatCell: {
+            range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: columnCount },
+            cell: {
+              userEnteredFormat: {
+                backgroundColor: { red: 0.169, green: 0.141, blue: 0.114 },
+                textFormat: { bold: true, foregroundColor: { red: 1, green: 1, blue: 1 } },
+                horizontalAlignment: "CENTER",
+                verticalAlignment: "MIDDLE",
+              },
+            },
+            fields: "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment)",
+          },
+        },
+        {
+          updateSheetProperties: {
+            properties: { sheetId, gridProperties: { frozenRowCount: 1 } },
+            fields: "gridProperties.frozenRowCount",
+          },
+        },
+        {
+          updateDimensionProperties: {
+            range: { sheetId, dimension: "COLUMNS", startIndex: 0, endIndex: columnCount },
+            properties: { pixelSize: 130 },
+            fields: "pixelSize",
+          },
+        },
+        {
+          repeatCell: {
+            range: { sheetId, startRowIndex: 1, startColumnIndex: 5, endColumnIndex: 7 },
+            cell: {
+              userEnteredFormat: { numberFormat: { type: "NUMBER", pattern: "#,##0" } },
+            },
+            fields: "userEnteredFormat.numberFormat",
+          },
+        },
+        {
+          repeatCell: {
+            range: { sheetId, startRowIndex: 1, startColumnIndex: 0, endColumnIndex: columnCount },
+            cell: { userEnteredFormat: { horizontalAlignment: "CENTER" } },
+            fields: "userEnteredFormat.horizontalAlignment",
+          },
+        },
+        {
+          updateBorders: {
+            range: { sheetId, startRowIndex: 0, startColumnIndex: 0, endColumnIndex: columnCount },
+            top: lightBorder,
+            bottom: lightBorder,
+            left: lightBorder,
+            right: lightBorder,
+            innerHorizontal: lightBorder,
+            innerVertical: lightBorder,
+          },
+        },
+      ],
+    },
+  });
+}
+
+/**
  * 급여장부(매입)인건비 탭)에서 이름이 일치하면서 시급(H열)이 비어있는
  * 가장 위쪽 행을 찾아 시급(H)/근무일정(I)/근무시간(J)을 채운다.
  * 미리 준비된 행(작성자·입금요청·요청금액·업무명·이름·주민등록번호)이 없으면 실패한다.
