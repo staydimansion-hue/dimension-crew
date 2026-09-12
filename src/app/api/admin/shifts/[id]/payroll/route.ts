@@ -52,7 +52,7 @@ export async function POST(
       return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true, row: result.row });
+    return NextResponse.json({ ok: true, row: result.row, created: result.created });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "급여장부 입력에 실패했습니다." },

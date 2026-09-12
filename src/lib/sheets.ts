@@ -199,7 +199,9 @@ export async function formatAttendanceSheet() {
 /**
  * 급여장부(매입)인건비 탭)에서 이름이 일치하면서 시급(H열)이 비어있는
  * 가장 위쪽 행을 찾아 시급(H)/근무일정(I)/근무시간(J)을 채운다.
- * 미리 준비된 행(작성자·입금요청·요청금액·업무명·이름·주민등록번호)이 없으면 실패한다.
+ * 그런 행이 없으면 새 행을 만들어 이름(F)·시급(H)·근무일정(I)·근무시간(J)만
+ * 채우고, 작성자·입금요청·요청금액·업무명(A~D)과 주민등록번호(G)는 매니저가
+ * 나중에 입금 요청할 때 직접 채우도록 비워둔다.
  */
 export async function writePayrollEntry(params: {
   name: string;
@@ -207,7 +209,7 @@ export async function writePayrollEntry(params: {
   startTimeStr: string;
   endTimeStr: string;
   hoursWorked: number;
-}): Promise<{ row: number }> {
+}): Promise<{ row: number; created: boolean }> {
   const { sheets, spreadsheetId } = getSheetsClient();
 
   const res = await sheets.spreadsheets.values.get({
@@ -226,30 +228,40 @@ export async function writePayrollEntry(params: {
     }
   }
 
-  if (targetRow === -1) {
-    throw new Error(
-      `"${params.name}" 이름으로 시급이 비어있는 행을 급여장부(${PAYROLL_TAB_NAME})에서 찾지 못했습니다. 행이 미리 준비되어 있는지 확인해주세요.`
-    );
-  }
-
   const totalMinutes = params.hoursWorked * 60;
   const roundedMinutes = Math.round(totalMinutes / 10) * 10;
   const roundedHours = Math.round((roundedMinutes / 60) * 100) / 100;
+  const scheduleStr = `${params.startTimeStr} ~ ${params.endTimeStr} (휴게 없음)`;
+
+  if (targetRow === -1) {
+    const appendRes = await sheets.spreadsheets.values.append({
+      spreadsheetId,
+      range: `${PAYROLL_TAB_NAME}!A:J`,
+      valueInputOption: "RAW",
+      insertDataOption: "INSERT_ROWS",
+      requestBody: {
+        values: [
+          ["", "", "", "", "", params.name, "", params.hourlyWage, scheduleStr, roundedHours],
+        ],
+      },
+    });
+    const updatedRange = appendRes.data.updates?.updatedRange;
+    const match = updatedRange?.match(/(\d+)(?::|$)/);
+    const rowNumber = match ? parseInt(match[1], 10) : NaN;
+    if (!updatedRange || Number.isNaN(rowNumber)) {
+      throw new Error("급여장부 새 행 추가 응답에서 행 번호를 확인하지 못했습니다.");
+    }
+    return { row: rowNumber, created: true };
+  }
 
   await sheets.spreadsheets.values.update({
     spreadsheetId,
     range: `${PAYROLL_TAB_NAME}!H${targetRow}:J${targetRow}`,
     valueInputOption: "RAW",
     requestBody: {
-      values: [
-        [
-          params.hourlyWage,
-          `${params.startTimeStr} ~ ${params.endTimeStr} (휴게 없음)`,
-          roundedHours,
-        ],
-      ],
+      values: [[params.hourlyWage, scheduleStr, roundedHours]],
     },
   });
 
-  return { row: targetRow };
+  return { row: targetRow, created: false };
 }
