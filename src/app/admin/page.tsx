@@ -12,10 +12,6 @@ type ShiftRow = {
   amount: number | null;
   status: string;
   sheet_row: number | null;
-  clock_in_out_of_range: boolean | null;
-  clock_out_out_of_range: boolean | null;
-  clock_in_distance_m: number | null;
-  clock_out_distance_m: number | null;
   staff: { name: string } | { name: string }[] | null;
 };
 
@@ -127,9 +123,6 @@ export default function AdminDashboardPage() {
                   금액
                 </th>
                 <th className="px-4 py-3 text-[11px] tracking-[0.1em] text-muted uppercase font-semibold border-b border-line">
-                  위치
-                </th>
-                <th className="px-4 py-3 text-[11px] tracking-[0.1em] text-muted uppercase font-semibold border-b border-line">
                   상태
                 </th>
                 <th className="px-4 py-3 text-[11px] tracking-[0.1em] text-muted uppercase font-semibold border-b border-line">
@@ -143,13 +136,13 @@ export default function AdminDashboardPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-6 text-center text-muted">
+                  <td colSpan={9} className="px-4 py-6 text-center text-muted">
                     불러오는 중...
                   </td>
                 </tr>
               ) : shifts.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-6 text-center text-muted">
+                  <td colSpan={9} className="px-4 py-6 text-center text-muted">
                     기록이 없습니다.
                   </td>
                 </tr>
@@ -171,18 +164,6 @@ export default function AdminDashboardPage() {
                     </td>
                     <td className="px-4 py-3">
                       {s.amount != null ? `${s.amount.toLocaleString()}원` : "-"}
-                    </td>
-                    <td className="px-4 py-3">
-                      {s.clock_in_out_of_range || s.clock_out_out_of_range ? (
-                        <span className="text-brick">
-                          범위 밖
-                          {s.clock_in_distance_m != null && (
-                            <span className="text-muted"> ({Math.round(s.clock_in_distance_m)}m)</span>
-                          )}
-                        </span>
-                      ) : (
-                        <span className="text-sage">정상</span>
-                      )}
                     </td>
                     <td className="px-4 py-3">
                       {s.status === "approved" ? (

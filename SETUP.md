@@ -6,7 +6,8 @@
 2. **SQL Editor**에서 `supabase/schema.sql` 내용을 그대로 실행 (1-1, 출퇴근)
 3. **SQL Editor**에서 `supabase/schema_rooms.sql` 내용을 그대로 실행 (1-2, 객실 청소 — 객실 16개실 시드 데이터 포함)
 4. **SQL Editor**에서 `supabase/schema_photo_category.sql` 내용을 그대로 실행 (청소 사진 객실/욕실 구분)
-5. **Project Settings > API**에서 `Project URL`과 `service_role` 키를 복사
+5. **SQL Editor**에서 `supabase/schema_drop_gps.sql` 내용을 그대로 실행 (GPS 위치 확인 기능 제거)
+6. **Project Settings > API**에서 `Project URL`과 `service_role` 키를 복사
 
 ⚠️ 사진 저장용 Storage 버킷(`task-photos`)은 앱이 첫 사진 업로드 시 자동으로 생성합니다. 별도로 만들 필요 없습니다.
 
@@ -43,8 +44,7 @@ npm run dev
 ```
 
 - `/admin/login` → 관리자 로그인 → **직원 관리**에서 직원 등록 (이름/전화번호/시급, 초기 PIN은 0808)
-- **설정**(`/admin/settings`)에서 숙소 GPS 좌표와 허용 반경(기본 150m), 공제율(기본 3.3%)을 확인/수정
-  - ⚠️ 좌표를 입력하지 않으면 GPS 확인 없이(항상 "정상") 출퇴근이 기록됩니다. 실제 운영 전에 반드시 숙소에서 "지금 이 위치를 좌표로 사용" 버튼으로 입력하세요.
+- **설정**(`/admin/settings`)에서 공제율(기본 3.3%)을 확인/수정
 - `/checkin`에서 전화번호+PIN(0808)으로 최초 로그인 후 출근/퇴근 테스트
 - `/calendar`에서 본인 근무 캘린더·예상 입금액 확인
 - 구글 시트의 `QR출퇴근기록` 탭에 자동 기록되는지 확인
@@ -62,6 +62,6 @@ npm run dev
 
 ## 참고
 
-- 1-1(로그인/QR 출퇴근/GPS 확인/급여 계산·캘린더/어드민 계정·시급·설정·근무 승인)과 1-2(객실 청소 체크·사진, 객실/배정/기록 관리)까지 포함합니다.
+- 1-1(로그인/QR 출퇴근/급여 계산·캘린더/어드민 계정·시급·설정·근무 승인)과 1-2(객실 청소 체크·사진, 객실/배정/기록 관리)까지 포함합니다. GPS 위치 확인 기능은 2026-09-12 매니저 요청으로 제거했습니다.
 - 슬랙 연동은 다음 단계(2, 3)에서 진행합니다. 자세한 내용은 `docs/기획서.md` 참고.
 - 시크릿(Supabase 키, Google 서비스 계정 JSON)은 절대 Git에 커밋하지 마세요.

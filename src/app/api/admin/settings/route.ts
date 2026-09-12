@@ -18,27 +18,6 @@ export async function PATCH(request: Request) {
   const body = await request.json().catch(() => null);
   const updates: Record<string, unknown> = {};
 
-  if (body?.geoCenterLat !== undefined) {
-    const v = Number(body.geoCenterLat);
-    if (!Number.isFinite(v)) {
-      return NextResponse.json({ error: "위도 값이 올바르지 않습니다." }, { status: 400 });
-    }
-    updates.geo_center_lat = v;
-  }
-  if (body?.geoCenterLng !== undefined) {
-    const v = Number(body.geoCenterLng);
-    if (!Number.isFinite(v)) {
-      return NextResponse.json({ error: "경도 값이 올바르지 않습니다." }, { status: 400 });
-    }
-    updates.geo_center_lng = v;
-  }
-  if (body?.geoRadiusM !== undefined) {
-    const v = Number(body.geoRadiusM);
-    if (!Number.isFinite(v) || v <= 0) {
-      return NextResponse.json({ error: "반경 값이 올바르지 않습니다." }, { status: 400 });
-    }
-    updates.geo_radius_m = v;
-  }
   if (body?.deductionRate !== undefined) {
     const v = Number(body.deductionRate);
     if (!Number.isFinite(v) || v < 0 || v >= 1) {

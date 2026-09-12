@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import StaffGate from "@/components/StaffGate";
-import { getCurrentPositionSafe } from "@/lib/geolocateClient";
 
 type AssignedRoom = { id: string; number: string; type_name: string };
 
@@ -48,23 +47,17 @@ function AssignedRoomsPreview() {
 }
 
 type Result =
-  | { type: "check_in"; name: string; time: string; outOfRange: boolean | null }
+  | { type: "check_in"; name: string; time: string }
   | {
       type: "check_out";
       name: string;
       time: string;
       hoursWorked: number;
       amount: number;
-      outOfRange: boolean | null;
     };
 
 async function submitToggle(): Promise<Result> {
-  const pos = await getCurrentPositionSafe();
-  const res = await fetch("/api/attendance/toggle", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(pos ? { lat: pos.lat, lng: pos.lng } : {}),
-  });
+  const res = await fetch("/api/attendance/toggle", { method: "POST" });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "처리 중 오류가 발생했습니다.");
   return data as Result;
@@ -234,11 +227,6 @@ function CheckinFlow({ name }: { name: string }) {
                 금액
               </div>
             </div>
-          </div>
-        )}
-        {result.outOfRange && (
-          <div className="mt-2 w-full bg-brick-tint border border-[#d9b9a4] rounded-lg px-3 py-2.5 text-xs text-brick leading-relaxed">
-            ⚠ 근무지 위치가 확인되지 않아 관리자 확인이 필요해요
           </div>
         )}
       </Card>
