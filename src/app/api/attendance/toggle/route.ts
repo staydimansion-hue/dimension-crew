@@ -24,28 +24,38 @@ async function notifyCheckOut(params: {
   const channel = process.env.SLACK_ROOM_CHANNEL_ID;
   if (!channel) return;
 
-  const { data: doneTasks } = await supabaseAdmin
+  const { data: tasks } = await supabaseAdmin
     .from("room_tasks")
-    .select("rooms(number)")
+    .select("status, rooms(number)")
     .eq("staff_id", params.staffId)
     .eq("work_date", params.todayStr)
-    .eq("status", "done");
+    .in("status", ["done", "carried_over"]);
 
-  const roomNumbers = (doneTasks ?? [])
-    .map((t) => {
-      const room = Array.isArray(t.rooms) ? t.rooms[0] : t.rooms;
-      return room?.number;
-    })
-    .filter(Boolean);
+  function roomNumbersOf(status: "done" | "carried_over") {
+    return (tasks ?? [])
+      .filter((t) => t.status === status)
+      .map((t) => {
+        const room = Array.isArray(t.rooms) ? t.rooms[0] : t.rooms;
+        return room?.number;
+      })
+      .filter(Boolean);
+  }
 
-  const roomsLine =
-    roomNumbers.length > 0
-      ? `오늘 완료한 방: ${roomNumbers.map((n) => `${n}호`).join(", ")}`
+  const doneRooms = roomNumbersOf("done");
+  const carriedRooms = roomNumbersOf("carried_over");
+
+  const doneLine =
+    doneRooms.length > 0
+      ? `오늘 완료한 방: ${doneRooms.map((n) => `${n}호`).join(", ")}`
       : "오늘 완료한 방 없음";
+  const carriedLine =
+    carriedRooms.length > 0
+      ? `\n다음날로 이월된 방: ${carriedRooms.map((n) => `${n}호`).join(", ")}`
+      : "";
 
   postSlackMessage({
     channel,
-    text: `🔴 ${params.name}님 퇴근했습니다 (${kstTimeString(params.now)})\n${roomsLine}\n관리자 승인: ${params.origin}/admin`,
+    text: `🔴 ${params.name}님 퇴근했습니다 (${kstTimeString(params.now)})\n${doneLine}${carriedLine}\n관리자 승인: ${params.origin}/admin`,
   }).catch((err) => console.error("슬랙 퇴근 알림 실패:", err));
 }
 
