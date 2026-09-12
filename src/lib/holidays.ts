@@ -12,13 +12,16 @@ async function fetchMonthHolidays(year: number, month: number): Promise<Set<stri
   const cached = monthCache.get(cacheKey);
   if (cached) return cached;
 
-  const serviceKey = process.env.DATA_GO_KR_HOLIDAY_API_KEY;
-  if (!serviceKey) {
+  const rawServiceKey = process.env.DATA_GO_KR_HOLIDAY_API_KEY;
+  if (!rawServiceKey) {
     throw new Error("DATA_GO_KR_HOLIDAY_API_KEY 환경변수가 설정되지 않았습니다.");
   }
+  // 공공데이터포털은 "Encoding"/"Decoding" 두 종류 키를 제공하는데, 어느 쪽을 넣어도
+  // 아래에서 다시 인코딩하므로 미리 디코딩해서 원문 키로 정규화한다.
+  const serviceKey = decodeURIComponent(rawServiceKey);
 
   const url = new URL(
-    "http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo"
+    "https://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo"
   );
   url.searchParams.set("serviceKey", serviceKey);
   url.searchParams.set("solYear", String(year));
@@ -27,10 +30,18 @@ async function fetchMonthHolidays(year: number, month: number): Promise<Set<stri
   url.searchParams.set("numOfRows", "100");
 
   const res = await fetch(url.toString());
+  const rawText = await res.text();
   if (!res.ok) {
-    throw new Error(`공휴일 API 호출 실패: ${res.status}`);
+    throw new Error(`공휴일 API 호출 실패 (${res.status}): ${rawText.slice(0, 300)}`);
   }
-  const data = await res.json();
+  let data;
+  try {
+    data = JSON.parse(rawText);
+  } catch {
+    throw new Error(
+      `공휴일 API가 JSON이 아닌 응답을 반환했습니다 (서비스키 오류 가능성): ${rawText.slice(0, 300)}`
+    );
+  }
   const items = data?.response?.body?.items?.item;
   const list = Array.isArray(items) ? items : items ? [items] : [];
 

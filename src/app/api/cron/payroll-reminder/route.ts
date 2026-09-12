@@ -18,6 +18,16 @@ function staffName(s: ShiftJoin["staff"]): string {
 }
 
 export async function GET(request: Request) {
+  try {
+    return await handle(request);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("payroll-reminder cron 실패:", err);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+async function handle(request: Request) {
   const { searchParams } = new URL(request.url);
   const token = searchParams.get("token");
   if (!token || token !== process.env.CRON_SECRET) {
