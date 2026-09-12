@@ -63,17 +63,20 @@ npm run dev
 
 ⚠️ Railway `redeploy` 버튼은 최신 커밋을 새로 빌드하지 않고 마지막 빌드를 재시작합니다. 새 코드가 반영됐는지 확인하려면 GitHub 최신 커밋 SHA와 Railway 배포 목록의 빌드 SHA를 비교하세요.
 
-## 7. 인건비 월별 자동 알림 (선택, 5.2.1/5.3)
+## 7. 인건비 월별 자동 알림 (선택, 5.2.1/5.3) [실전 테스트 완료 2026-09-13]
 
 매월 4일(또는 그 전 영업일)에 매니저 개인 슬랙 DM으로 인건비 요약을 보내고, 버튼으로 완료 공지까지 하는 기능입니다. 안 하셔도 급여장부 수동 입력(어드민 버튼)은 그대로 작동합니다.
 
 1. **슬랙 앱 → Interactivity & Shortcuts** 켜기 → Request URL에 `https://<배포주소>/api/slack/interactions` 입력 → 저장
+   - ⚠️ **Socket Mode**가 켜져 있으면 Request URL 입력란이 안 보입니다. Socket Mode를 먼저 꺼야 합니다.
 2. **슬랙 앱 → Basic Information → Signing Secret** 복사 → Railway `SLACK_SIGNING_SECRET`에 등록
 3. 매니저 본인의 슬랙 사용자 ID 확인 (프로필 → 점 3개 메뉴 → "멤버 ID 복사") → Railway `SLACK_MANAGER_USER_ID`에 등록
 4. 인건비 완료 공지를 받을 채널(`#스테이디멘션-운영지원팀`)의 채널 ID 확인 → Railway `SLACK_PAYROLL_CHANNEL_ID`에 등록
-5. **공공데이터포털**(data.go.kr) 가입 → "특일 정보" 검색 → 활용신청(즉시 승인) → 마이페이지에서 인증키(Encoding 또는 Decoding) 확인 → Railway `DATA_GO_KR_HOLIDAY_API_KEY`에 등록
+5. **공공데이터포털**(data.go.kr) 가입 → "특일 정보" 검색 → 활용신청 → 마이페이지에서 인증키(Encoding 또는 Decoding 아무 형태나 상관없음, 코드가 자동 정규화) 확인 → Railway `DATA_GO_KR_HOLIDAY_API_KEY`에 등록
+   - ⚠️ 승인 상태로 떠도 실제 인증 시스템에 반영되기까지 **1~2시간(길면 반나절) 지연**될 수 있습니다. 등록 직후 테스트해서 `SERVICE_KEY_IS_NOT_REGISTERED_ERROR`가 나오면 코드 문제가 아니라 이 지연 때문이니 시간을 두고 다시 시도하세요.
 6. 임의의 긴 문자열을 만들어 Railway `CRON_SECRET`에 등록 (예: `openssl rand -hex 16`)
 7. **cron-job.org**(무료) 가입 → 새 크론잡 생성 → URL에 `https://<배포주소>/api/cron/payroll-reminder?token=<6번에서 만든 값>` 입력 → 매일 1회(예: 오전 9시) 실행되게 설정
+8. **동작 확인**: 브라우저에서 위 URL을 직접 열어봐서 `{"skipped":true,"today":"...","reminderDate":"..."}` 같은 JSON이 뜨면 정상 작동 중인 것입니다(오늘이 알림일이 아니라 건너뛴 것). `{"error":"..."}`가 뜨면 메시지에 원인이 나오니 그에 맞게 환경변수를 다시 확인하세요.
 
 ## 참고
 
