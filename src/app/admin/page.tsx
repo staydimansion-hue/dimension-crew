@@ -105,7 +105,7 @@ export default function AdminDashboardPage() {
         </div>
 
         <div className="bg-card border border-line rounded-2xl overflow-x-auto">
-          <table className="w-full text-[13.5px]">
+          <table className="w-full text-[13.5px] whitespace-nowrap">
             <thead>
               <tr className="text-left">
                 <th className="px-4 py-3 text-[11px] tracking-[0.1em] text-muted uppercase font-semibold border-b border-line">

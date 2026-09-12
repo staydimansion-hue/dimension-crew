@@ -32,32 +32,37 @@ export default function AdminNav({ active }: { active: Tab }) {
   }
 
   return (
-    <div className="flex items-center justify-between px-10 sm:px-14 h-[76px] border-b border-line shrink-0 flex-wrap gap-3 py-3">
-      <div className="flex items-baseline gap-2.5">
-        <div className="font-display text-[17px] font-bold tracking-[0.1em] text-ink">
-          STAY DIMANSION
+    <div className="border-b border-line shrink-0">
+      <div className="flex items-center justify-between px-5 sm:px-14 h-14 sm:h-[76px]">
+        <div className="flex items-baseline gap-2.5 min-w-0 overflow-hidden">
+          <div className="font-display text-[15px] sm:text-[17px] font-bold tracking-[0.1em] text-ink whitespace-nowrap">
+            STAY DIMANSION
+          </div>
+          <div className="text-[10px] sm:text-[11px] tracking-[0.15em] text-muted whitespace-nowrap">
+            CREW · ADMIN
+          </div>
         </div>
-        <div className="text-[11px] tracking-[0.15em] text-muted">
-          CREW · ADMIN
-        </div>
+        <button
+          onClick={handleLogout}
+          className="text-muted text-[12px] sm:text-[13px] shrink-0 ml-3"
+        >
+          로그아웃
+        </button>
       </div>
-      <div className="flex items-center gap-5 text-[13px] flex-wrap">
+      <div className="flex items-center gap-5 text-[13px] px-5 sm:px-14 pb-3 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {TABS.map((tab) => (
           <Link
             key={tab.key}
             href={tab.href}
-            className={
+            className={`shrink-0 pb-1 ${
               tab.key === active
-                ? "text-ink font-semibold pb-1 border-b-2 border-accent"
+                ? "text-ink font-semibold border-b-2 border-accent"
                 : "text-muted"
-            }
+            }`}
           >
             {tab.label}
           </Link>
         ))}
-        <button onClick={handleLogout} className="text-muted ml-2">
-          로그아웃
-        </button>
       </div>
     </div>
   );

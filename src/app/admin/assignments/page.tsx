@@ -77,7 +77,7 @@ export default function AdminAssignmentsPage() {
         </div>
 
         <div className="bg-card border border-line rounded-2xl overflow-x-auto">
-          <table className="w-full text-[13.5px]">
+          <table className="w-full text-[13.5px] whitespace-nowrap">
             <thead>
               <tr className="text-left">
                 {["객실", "타입", "담당자", "상태", "경로"].map((h) => (

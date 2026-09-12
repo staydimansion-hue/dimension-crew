@@ -139,7 +139,7 @@ export default function AdminRecordsPage() {
         )}
 
         <div className="bg-card border border-line rounded-2xl overflow-x-auto">
-          <table className="w-full text-[13.5px]">
+          <table className="w-full text-[13.5px] whitespace-nowrap">
             <thead>
               <tr className="text-left">
                 {["날짜", "객실", "타입", "담당자", "경로", "완료시각", "소요시간", "사진"].map(

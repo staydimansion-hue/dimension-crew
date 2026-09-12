@@ -142,7 +142,7 @@ export default function AdminStaffPage() {
         {notice && <p className="text-sm text-sage mb-3">{notice}</p>}
 
         <div className="bg-card border border-line rounded-2xl overflow-x-auto">
-          <table className="w-full text-[13.5px]">
+          <table className="w-full text-[13.5px] whitespace-nowrap">
             <thead>
               <tr className="text-left">
                 {["이름", "전화번호", "현재 시급", "시급 변경 (오늘부터)", "상태", "작업"].map(
