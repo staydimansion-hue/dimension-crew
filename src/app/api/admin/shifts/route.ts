@@ -9,7 +9,7 @@ export async function GET(request: Request) {
   let query = supabaseAdmin
     .from("shifts")
     .select(
-      "id, work_date, clock_in_at, clock_out_at, hours_worked, hourly_wage, amount, status, sheet_row, staff(name)"
+      "id, work_date, clock_in_at, clock_out_at, hours_worked, hourly_wage, amount, status, sheet_row, payroll_row, staff(name)"
     )
     .order("work_date", { ascending: false })
     .order("clock_in_at", { ascending: false });

@@ -12,6 +12,7 @@ type ShiftRow = {
   amount: number | null;
   status: string;
   sheet_row: number | null;
+  payroll_row: number | null;
   staff: { name: string } | { name: string }[] | null;
 };
 
@@ -29,6 +30,10 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [payrollBusyId, setPayrollBusyId] = useState<string | null>(null);
+  const [payrollError, setPayrollError] = useState<{ id: string; message: string } | null>(
+    null
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -48,6 +53,19 @@ export default function AdminDashboardPage() {
 
   async function handleApprove(id: string) {
     await fetch(`/api/admin/shifts/${id}/approve`, { method: "POST" });
+    load();
+  }
+
+  async function handlePayroll(id: string) {
+    setPayrollBusyId(id);
+    setPayrollError(null);
+    const res = await fetch(`/api/admin/shifts/${id}/payroll`, { method: "POST" });
+    const data = await res.json();
+    setPayrollBusyId(null);
+    if (!res.ok) {
+      setPayrollError({ id, message: data.error || "입력에 실패했습니다." });
+      return;
+    }
     load();
   }
 
@@ -129,6 +147,9 @@ export default function AdminDashboardPage() {
                   시트
                 </th>
                 <th className="px-4 py-3 text-[11px] tracking-[0.1em] text-muted uppercase font-semibold border-b border-line">
+                  급여장부
+                </th>
+                <th className="px-4 py-3 text-[11px] tracking-[0.1em] text-muted uppercase font-semibold border-b border-line">
                   작업
                 </th>
               </tr>
@@ -136,13 +157,13 @@ export default function AdminDashboardPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-6 text-center text-muted">
+                  <td colSpan={10} className="px-4 py-6 text-center text-muted">
                     불러오는 중...
                   </td>
                 </tr>
               ) : shifts.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-6 text-center text-muted">
+                  <td colSpan={10} className="px-4 py-6 text-center text-muted">
                     기록이 없습니다.
                   </td>
                 </tr>
@@ -186,6 +207,28 @@ export default function AdminDashboardPage() {
                         <span className="text-sage">완료</span>
                       ) : (
                         <span className="text-brick">실패</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {s.payroll_row ? (
+                        <span className="text-sage">입력됨 ({s.payroll_row}행)</span>
+                      ) : s.clock_out_at ? (
+                        <div className="flex flex-col gap-1">
+                          <button
+                            onClick={() => handlePayroll(s.id)}
+                            disabled={payrollBusyId === s.id}
+                            className="text-[12px] px-2.5 py-1 rounded-full bg-brick-tint text-brick disabled:opacity-50 whitespace-nowrap"
+                          >
+                            {payrollBusyId === s.id ? "입력 중..." : "급여장부 입력"}
+                          </button>
+                          {payrollError?.id === s.id && (
+                            <span className="text-[11px] text-brick whitespace-normal max-w-[220px]">
+                              {payrollError.message}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted">-</span>
                       )}
                     </td>
                     <td className="px-4 py-3">

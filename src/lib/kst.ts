@@ -29,3 +29,9 @@ export function kstDateTimeString(date: Date = new Date()): string {
   const p = kstParts(date);
   return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}:${p.second}`;
 }
+
+export function kstTimeString(date: Date | string): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  const p = kstParts(d);
+  return `${p.hour}:${p.minute}`;
+}

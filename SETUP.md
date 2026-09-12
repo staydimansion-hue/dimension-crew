@@ -8,7 +8,8 @@
 4. **SQL Editor**에서 `supabase/schema_photo_category.sql` 내용을 그대로 실행 (청소 사진 객실/욕실 구분)
 5. **SQL Editor**에서 `supabase/schema_drop_gps.sql` 내용을 그대로 실행 (GPS 위치 확인 기능 제거)
 6. **SQL Editor**에서 `supabase/schema_qr_token.sql` 내용을 그대로 실행 (QR을 앱 안 카메라 스캔 전용으로 전환하기 위한 토큰 생성)
-7. **Project Settings > API**에서 `Project URL`과 `service_role` 키를 복사
+7. **SQL Editor**에서 `supabase/schema_payroll_row.sql` 내용을 그대로 실행 (급여장부 자동입력 여부 기록용 컬럼)
+8. **Project Settings > API**에서 `Project URL`과 `service_role` 키를 복사
 
 ⚠️ 사진 저장용 Storage 버킷(`task-photos`)은 앱이 첫 사진 업로드 시 자동으로 생성합니다. 별도로 만들 필요 없습니다.
 
@@ -30,7 +31,7 @@ cp .env.example .env.local
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`: 1번에서 복사한 값
 - `ADMIN_JWT_SECRET`, `STAFF_JWT_SECRET`: 각각 다른 랜덤 문자열 (`openssl rand -hex 32`)
 - `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`: 2번에서 받은 값
-- `GOOGLE_SHEETS_SPREADSHEET_ID`, `GOOGLE_SHEETS_TAB_NAME`: 기본값 그대로 사용
+- `GOOGLE_SHEETS_SPREADSHEET_ID`, `GOOGLE_SHEETS_TAB_NAME`, `GOOGLE_SHEETS_PAYROLL_TAB_NAME`: 기본값 그대로 사용
 
 ## 4. 관리자 계정 생성
 

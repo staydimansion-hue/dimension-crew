@@ -1,6 +1,7 @@
 import { google } from "googleapis";
 
 const SHEET_TAB_NAME = process.env.GOOGLE_SHEETS_TAB_NAME || "QR출퇴근기록";
+const PAYROLL_TAB_NAME = process.env.GOOGLE_SHEETS_PAYROLL_TAB_NAME || "매입)인건비";
 const HEADER_ROW = [
   "날짜",
   "이름",
@@ -109,4 +110,62 @@ export async function updateCheckOutRow(params: {
       ],
     },
   });
+}
+
+/**
+ * 급여장부(매입)인건비 탭)에서 이름이 일치하면서 시급(H열)이 비어있는
+ * 가장 위쪽 행을 찾아 시급(H)/근무일정(I)/근무시간(J)을 채운다.
+ * 미리 준비된 행(작성자·입금요청·요청금액·업무명·이름·주민등록번호)이 없으면 실패한다.
+ */
+export async function writePayrollEntry(params: {
+  name: string;
+  hourlyWage: number;
+  startTimeStr: string;
+  endTimeStr: string;
+  hoursWorked: number;
+}): Promise<{ row: number }> {
+  const { sheets, spreadsheetId } = getSheetsClient();
+
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: `${PAYROLL_TAB_NAME}!F2:H`,
+  });
+  const rows = res.data.values ?? [];
+
+  let targetRow = -1;
+  for (let i = 0; i < rows.length; i++) {
+    const rowName = rows[i]?.[0];
+    const wageCell = rows[i]?.[2];
+    if (rowName === params.name && !wageCell) {
+      targetRow = i + 2; // 1-indexed + 헤더 1행
+      break;
+    }
+  }
+
+  if (targetRow === -1) {
+    throw new Error(
+      `"${params.name}" 이름으로 시급이 비어있는 행을 급여장부(${PAYROLL_TAB_NAME})에서 찾지 못했습니다. 행이 미리 준비되어 있는지 확인해주세요.`
+    );
+  }
+
+  const totalMinutes = params.hoursWorked * 60;
+  const roundedMinutes = Math.round(totalMinutes / 10) * 10;
+  const roundedHours = Math.round((roundedMinutes / 60) * 100) / 100;
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range: `${PAYROLL_TAB_NAME}!H${targetRow}:J${targetRow}`,
+    valueInputOption: "RAW",
+    requestBody: {
+      values: [
+        [
+          params.hourlyWage,
+          `${params.startTimeStr} ~ ${params.endTimeStr} (휴게 없음)`,
+          roundedHours,
+        ],
+      ],
+    },
+  });
+
+  return { row: targetRow };
 }
