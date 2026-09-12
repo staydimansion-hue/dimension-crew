@@ -119,8 +119,8 @@ function CalendarFlow({ name }: { name: string }) {
               >
                 <span className={isSelected ? "font-bold" : "font-medium"}>{day}</span>
                 {shift && (
-                  <span className="text-[9.5px] opacity-85">
-                    {Math.round(shift.amount / 1000)}k
+                  <span className="text-[8px] leading-none opacity-85">
+                    {shift.amount.toLocaleString()}
                   </span>
                 )}
               </button>
