@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 type Tab =
   | "dashboard"
+  | "payroll"
   | "staff"
   | "assignments"
   | "rooms"
@@ -14,6 +15,7 @@ type Tab =
 
 const TABS: { key: Tab; label: string; href: string }[] = [
   { key: "dashboard", label: "출퇴근 관리", href: "/admin" },
+  { key: "payroll", label: "인건비", href: "/admin/payroll" },
   { key: "staff", label: "직원 관리", href: "/admin/staff" },
   { key: "assignments", label: "객실 배정", href: "/admin/assignments" },
   { key: "rooms", label: "객실 관리", href: "/admin/rooms" },
