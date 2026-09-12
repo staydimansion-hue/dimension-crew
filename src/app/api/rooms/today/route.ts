@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getStaffSession } from "@/lib/staffSession";
 import { kstDateString } from "@/lib/kst";
+import { getPhotoSignedUrl } from "@/lib/photoStorage";
 
 export async function GET() {
   const session = await getStaffSession();
@@ -11,9 +12,11 @@ export async function GET() {
 
   const today = kstDateString();
 
-  const { data: myTasks, error: myTasksError } = await supabaseAdmin
+  const { data: myTasksRaw, error: myTasksError } = await supabaseAdmin
     .from("room_tasks")
-    .select("id, status, completed_at, source, rooms(number, type_name)")
+    .select(
+      "id, status, completed_at, source, rooms(number, type_name), task_photos(id, storage_path)"
+    )
     .eq("work_date", today)
     .eq("staff_id", session.staffId)
     .order("created_at", { ascending: true });
@@ -21,6 +24,23 @@ export async function GET() {
   if (myTasksError) {
     return NextResponse.json({ error: myTasksError.message }, { status: 500 });
   }
+
+  const myTasks = await Promise.all(
+    (myTasksRaw ?? []).map(async (t) => {
+      const rawPhotos = Array.isArray(t.task_photos) ? t.task_photos : [];
+      const photos = await Promise.all(
+        rawPhotos.map(async (p) => ({ id: p.id, url: await getPhotoSignedUrl(p.storage_path) }))
+      );
+      return {
+        id: t.id,
+        status: t.status,
+        completed_at: t.completed_at,
+        source: t.source,
+        rooms: t.rooms,
+        photos,
+      };
+    })
+  );
 
   // 오늘 아직 태스크가 없거나(신규) 미배정 상태인 활성 객실 = 추가로 가져갈 수 있는 객실
   const { data: allRooms, error: roomsError } = await supabaseAdmin

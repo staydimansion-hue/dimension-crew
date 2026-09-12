@@ -35,3 +35,8 @@ export async function getPhotoSignedUrl(path: string): Promise<string | null> {
   if (error) return null;
   return data.signedUrl;
 }
+
+export async function deleteTaskPhoto(path: string): Promise<void> {
+  const { error } = await supabaseAdmin.storage.from(BUCKET).remove([path]);
+  if (error) throw new Error(error.message);
+}

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getStaffSession } from "@/lib/staffSession";
-import { uploadTaskPhoto } from "@/lib/photoStorage";
 import { postSlackMessage } from "@/lib/slack";
 
 export async function POST(request: Request) {
@@ -10,17 +9,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
   }
 
-  const form = await request.formData().catch(() => null);
-  const roomTaskId = form?.get("roomTaskId");
-  const photo = form?.get("photo");
+  const body = await request.json().catch(() => null);
+  const roomTaskId = typeof body?.roomTaskId === "string" ? body.roomTaskId : "";
 
-  if (typeof roomTaskId !== "string" || !roomTaskId) {
+  if (!roomTaskId) {
     return NextResponse.json({ error: "객실 정보가 없습니다." }, { status: 400 });
   }
 
   const { data: task, error: taskError } = await supabaseAdmin
     .from("room_tasks")
-    .select("id, staff_id, rooms(number)")
+    .select("id, staff_id, status, rooms(number)")
     .eq("id", roomTaskId)
     .maybeSingle();
 
@@ -31,17 +29,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "본인에게 배정된 객실이 아닙니다." }, { status: 403 });
   }
 
-  if (photo instanceof File && photo.size > 0) {
-    const buffer = Buffer.from(await photo.arrayBuffer());
-    try {
-      const path = await uploadTaskPhoto(roomTaskId, buffer, photo.type || "image/jpeg");
-      const { error: photoError } = await supabaseAdmin
-        .from("task_photos")
-        .insert({ room_task_id: roomTaskId, storage_path: path });
-      if (photoError) console.error("사진 기록 실패:", photoError);
-    } catch (err) {
-      console.error("사진 업로드 실패:", err);
-    }
+  // 이미 완료된 방을 사진 관리 목적으로 다시 열었을 때는 완료 처리를 다시 하지 않는다
+  // (완료 시각이 바뀌면 청소 소요시간 계산이 어긋난다).
+  if (task.status === "done") {
+    return NextResponse.json({ ok: true, alreadyDone: true });
   }
 
   const now = new Date().toISOString();

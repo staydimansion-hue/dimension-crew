@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import StaffGate from "@/components/StaffGate";
+import RoomsChecklist from "@/components/RoomsChecklist";
 import { getCurrentPositionSafe } from "@/lib/geolocateClient";
 
 type Result =
@@ -64,25 +65,26 @@ function CheckIcon() {
 }
 
 function CheckinFlow({ name }: { name: string }) {
-  const [status, setStatus] = useState<"loading" | "confirmCheckout" | "done" | "error">(
-    "loading"
-  );
+  const [status, setStatus] = useState<
+    "loading" | "confirmCheckin" | "confirmCheckout" | "processing" | "done" | "error"
+  >("loading");
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState("");
 
-  const doCheckIn = useCallback(async () => {
-    try {
-      const r = await submitToggle();
-      setResult(r);
-      setStatus("done");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "오류가 발생했습니다.");
-      setStatus("error");
-    }
+  const refreshStatus = useCallback(() => {
+    fetch("/api/attendance/status")
+      .then((res) => res.json())
+      .then((data) => {
+        setStatus(data.hasOpenShift ? "confirmCheckout" : "confirmCheckin");
+      });
   }, []);
 
-  async function doCheckOut() {
-    setStatus("loading");
+  useEffect(() => {
+    refreshStatus();
+  }, [refreshStatus]);
+
+  async function handleToggle() {
+    setStatus("processing");
     try {
       const r = await submitToggle();
       setResult(r);
@@ -93,22 +95,29 @@ function CheckinFlow({ name }: { name: string }) {
     }
   }
 
-  useEffect(() => {
-    fetch("/api/attendance/status")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.hasOpenShift) {
-          setStatus("confirmCheckout");
-        } else {
-          doCheckIn();
-        }
-      });
-  }, [doCheckIn]);
-
-  if (status === "loading") {
+  if (status === "loading" || status === "processing") {
     return (
       <Card>
         <p className="text-muted text-sm">처리 중...</p>
+      </Card>
+    );
+  }
+
+  if (status === "confirmCheckin") {
+    return (
+      <Card>
+        <div className="w-14 h-14 rounded-full border-[1.6px] border-ink flex items-center justify-center">
+          <CheckIcon />
+        </div>
+        <div className="text-center">
+          <div className="text-[19px] font-bold">{name}님, 출근하셨나요?</div>
+        </div>
+        <button
+          onClick={handleToggle}
+          className="w-full bg-accent text-bg rounded-[10px] py-3.5 font-semibold text-[15px] mt-2"
+        >
+          출근 확인
+        </button>
       </Card>
     );
   }
@@ -123,10 +132,10 @@ function CheckinFlow({ name }: { name: string }) {
           <div className="text-[19px] font-bold">{name}님, 퇴근하시겠습니까?</div>
         </div>
         <button
-          onClick={doCheckOut}
+          onClick={handleToggle}
           className="w-full bg-accent text-bg rounded-[10px] py-3.5 font-semibold text-[15px] mt-2"
         >
-          퇴근하기
+          퇴근 확인
         </button>
       </Card>
     );
@@ -148,50 +157,59 @@ function CheckinFlow({ name }: { name: string }) {
   const isCheckOut = result.type === "check_out";
 
   return (
-    <Card>
-      <div
-        className={`w-16 h-16 rounded-full flex items-center justify-center ${
-          isCheckOut ? "bg-[#ece2d0]" : "bg-sage-tint"
-        }`}
-      >
-        <CheckIcon />
-      </div>
-      <div className="text-center">
-        <div className="text-[21px] font-bold">
-          {result.name}님 {isCheckOut ? "퇴근" : "출근"} 완료
+    <div className="w-full flex flex-col gap-6">
+      <Card>
+        <div
+          className={`w-16 h-16 rounded-full flex items-center justify-center ${
+            isCheckOut ? "bg-[#ece2d0]" : "bg-sage-tint"
+          }`}
+        >
+          <CheckIcon />
         </div>
-        <div className="text-[13px] text-muted mt-1.5">{result.time}</div>
-      </div>
-      {result.type === "check_out" && (
-        <div className="flex gap-5 pt-4 mt-1 border-t border-line w-full justify-center">
-          <div className="text-center">
-            <div className="font-display text-xl font-bold">{result.hoursWorked}h</div>
-            <div className="text-[10.5px] tracking-[0.1em] text-muted uppercase mt-0.5">
-              근무시간
+        <div className="text-center">
+          <div className="text-[21px] font-bold">
+            {result.name}님 {isCheckOut ? "퇴근" : "출근"} 처리되었습니다
+          </div>
+          {isCheckOut && (
+            <div className="text-[14px] text-muted mt-1">오늘도 수고했습니다!</div>
+          )}
+          <div className="text-[13px] text-muted mt-1.5">{result.time}</div>
+        </div>
+        {result.type === "check_out" && (
+          <div className="flex gap-5 pt-4 mt-1 border-t border-line w-full justify-center">
+            <div className="text-center">
+              <div className="font-display text-xl font-bold">{result.hoursWorked}h</div>
+              <div className="text-[10.5px] tracking-[0.1em] text-muted uppercase mt-0.5">
+                근무시간
+              </div>
+            </div>
+            <div className="w-px bg-line" />
+            <div className="text-center">
+              <div className="font-display text-xl font-bold">
+                {result.amount.toLocaleString()}
+              </div>
+              <div className="text-[10.5px] tracking-[0.1em] text-muted uppercase mt-0.5">
+                금액
+              </div>
             </div>
           </div>
-          <div className="w-px bg-line" />
-          <div className="text-center">
-            <div className="font-display text-xl font-bold">
-              {result.amount.toLocaleString()}
-            </div>
-            <div className="text-[10.5px] tracking-[0.1em] text-muted uppercase mt-0.5">
-              금액
-            </div>
+        )}
+        {result.outOfRange && (
+          <div className="mt-2 w-full bg-brick-tint border border-[#d9b9a4] rounded-lg px-3 py-2.5 text-xs text-brick leading-relaxed">
+            ⚠ 근무지 위치가 확인되지 않아 관리자 확인이 필요해요
           </div>
-        </div>
-      )}
-      {result.outOfRange && (
-        <div className="mt-2 w-full bg-brick-tint border border-[#d9b9a4] rounded-lg px-3 py-2.5 text-xs text-brick leading-relaxed">
-          ⚠ 근무지 위치가 확인되지 않아 관리자 확인이 필요해요
-        </div>
-      )}
-    </Card>
+        )}
+      </Card>
+
+      {result.type === "check_in" && <RoomsChecklist name={result.name} />}
+    </div>
   );
 }
 
 export default function CheckinPage() {
   return (
-    <StaffGate activeTab="checkin">{(name) => <CheckinFlow name={name} />}</StaffGate>
+    <StaffGate cardClassName="w-full max-w-md" activeTab="checkin">
+      {(name) => <CheckinFlow name={name} />}
+    </StaffGate>
   );
 }
