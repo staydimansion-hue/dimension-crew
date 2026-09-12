@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 
-type Tab = "checkin" | "rooms" | "calendar";
+type Tab = "home" | "rooms" | "calendar";
 
 const TABS: { key: Tab; label: string; href: string }[] = [
-  { key: "checkin", label: "출퇴근", href: "/checkin" },
+  { key: "home", label: "홈", href: "/" },
   { key: "rooms", label: "청소", href: "/rooms" },
   { key: "calendar", label: "캘린더", href: "/calendar" },
 ];

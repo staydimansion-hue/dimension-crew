@@ -15,7 +15,7 @@ export async function GET() {
   const { data: myTasksRaw, error: myTasksError } = await supabaseAdmin
     .from("room_tasks")
     .select(
-      "id, status, completed_at, source, rooms(number, type_name), task_photos(id, storage_path)"
+      "id, status, completed_at, source, rooms(number, type_name), task_photos(id, storage_path, category)"
     )
     .eq("work_date", today)
     .eq("staff_id", session.staffId)
@@ -29,7 +29,11 @@ export async function GET() {
     (myTasksRaw ?? []).map(async (t) => {
       const rawPhotos = Array.isArray(t.task_photos) ? t.task_photos : [];
       const photos = await Promise.all(
-        rawPhotos.map(async (p) => ({ id: p.id, url: await getPhotoSignedUrl(p.storage_path) }))
+        rawPhotos.map(async (p) => ({
+          id: p.id,
+          url: await getPhotoSignedUrl(p.storage_path),
+          category: p.category as "room" | "bathroom",
+        }))
       );
       return {
         id: t.id,

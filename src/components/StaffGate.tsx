@@ -10,7 +10,7 @@ type Props = {
   /** 로그인 폼과 children을 감싸는 카드의 너비 클래스 (기본: 좁은 폼용) */
   cardClassName?: string;
   /** 하단 탭 메뉴에서 활성화할 탭. 지정하면 로그인 후 화면에 하단 메뉴가 보인다. */
-  activeTab?: "checkin" | "rooms" | "calendar";
+  activeTab?: "home" | "rooms" | "calendar";
 };
 
 export default function StaffGate({

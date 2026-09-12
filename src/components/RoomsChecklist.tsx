@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-type Photo = { id: string; url: string | null };
+type Category = "room" | "bathroom";
+
+type Photo = { id: string; url: string | null; category: Category };
 
 type Task = {
   id: string;
@@ -15,11 +17,18 @@ type Task = {
 
 type AvailableRoom = { id: string; number: string; type_name: string };
 
-const MAX_PHOTOS = 2;
+const CATEGORIES: { key: Category; label: string }[] = [
+  { key: "room", label: "객실" },
+  { key: "bathroom", label: "욕실" },
+];
 
 function roomInfo(r: Task["rooms"]) {
   if (!r) return { number: "-", type_name: "-" };
   return Array.isArray(r) ? (r[0] ?? { number: "-", type_name: "-" }) : r;
+}
+
+function photoFor(photos: Photo[], category: Category): Photo | undefined {
+  return photos.find((p) => p.category === category);
 }
 
 export default function RoomsChecklist({ name }: { name: string }) {
@@ -29,6 +38,7 @@ export default function RoomsChecklist({ name }: { name: string }) {
   const [pickRoomId, setPickRoomId] = useState("");
   const [modalTaskId, setModalTaskId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [capturingCategory, setCapturingCategory] = useState<Category | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const load = useCallback(async () => {
@@ -56,10 +66,11 @@ export default function RoomsChecklist({ name }: { name: string }) {
     await load();
   }
 
-  async function uploadPhoto(taskId: string, file: File) {
+  async function uploadPhoto(taskId: string, category: Category, file: File) {
     setUploading(true);
     const form = new FormData();
     form.append("roomTaskId", taskId);
+    form.append("category", category);
     form.append("photo", file);
     await fetch("/api/rooms/photos", { method: "POST", body: form });
     setUploading(false);
@@ -158,7 +169,9 @@ export default function RoomsChecklist({ name }: { name: string }) {
                         onClick={() => setModalTaskId(t.id)}
                         disabled={isCarried}
                         className={`text-[12px] px-3 py-1.5 rounded-full font-semibold disabled:opacity-40 ${
-                          t.photos.length > 0 ? "bg-sage-tint text-sage" : "bg-[#ece2d0] text-ink"
+                          t.photos.length >= CATEGORIES.length
+                            ? "bg-sage-tint text-sage"
+                            : "bg-[#ece2d0] text-ink"
                         }`}
                       >
                         사진{t.photos.length > 0 ? ` ${t.photos.length}` : ""}
@@ -213,33 +226,46 @@ export default function RoomsChecklist({ name }: { name: string }) {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              {modalTask.photos.map((p) => (
-                <div
-                  key={p.id}
-                  className="relative aspect-square rounded-lg overflow-hidden bg-bg"
-                >
-                  {p.url && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={p.url} alt="청소 사진" className="w-full h-full object-cover" />
-                  )}
-                  <button
-                    onClick={() => deletePhoto(p.id)}
-                    className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-6 h-6 text-xs leading-none"
-                    aria-label="사진 삭제"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-              {modalTask.photos.length < MAX_PHOTOS && (
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  className="aspect-square rounded-lg border border-dashed border-line flex items-center justify-center text-muted text-[13px] disabled:opacity-50"
-                >
-                  {uploading ? "업로드 중..." : "+ 사진 촬영"}
-                </button>
-              )}
+              {CATEGORIES.map((c) => {
+                const p = photoFor(modalTask.photos, c.key);
+                return (
+                  <div key={c.key} className="flex flex-col gap-1.5">
+                    <span className="text-[11px] tracking-[0.1em] text-muted uppercase text-center">
+                      {c.label}
+                    </span>
+                    {p ? (
+                      <div className="relative aspect-square rounded-lg overflow-hidden bg-bg">
+                        {p.url && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={p.url}
+                            alt={`${c.label} 청소 사진`}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                        <button
+                          onClick={() => deletePhoto(p.id)}
+                          className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-6 h-6 text-xs leading-none"
+                          aria-label={`${c.label} 사진 삭제`}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setCapturingCategory(c.key);
+                          fileInputRef.current?.click();
+                        }}
+                        disabled={uploading}
+                        className="aspect-square rounded-lg border border-dashed border-line flex items-center justify-center text-muted text-[13px] disabled:opacity-50"
+                      >
+                        {uploading && capturingCategory === c.key ? "업로드 중..." : "+ 촬영"}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             <input
@@ -250,7 +276,9 @@ export default function RoomsChecklist({ name }: { name: string }) {
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (file && modalTaskId) uploadPhoto(modalTaskId, file);
+                if (file && modalTaskId && capturingCategory) {
+                  uploadPhoto(modalTaskId, capturingCategory, file);
+                }
                 e.target.value = "";
               }}
             />

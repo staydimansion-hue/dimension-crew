@@ -1,9 +1,10 @@
 import Link from "next/link";
 import BrandKicker from "@/components/BrandKicker";
+import StaffNav from "@/components/StaffNav";
 
 export default function Home() {
   return (
-    <div className="min-h-dvh flex flex-col items-center justify-center bg-bg px-4">
+    <div className="min-h-dvh flex flex-col items-center justify-center bg-bg px-4 pb-24">
       <BrandKicker />
       <div className="flex flex-col gap-3 w-64">
         <Link
@@ -31,6 +32,7 @@ export default function Home() {
           관리자
         </Link>
       </div>
+      <StaffNav active="home" />
     </div>
   );
 }
