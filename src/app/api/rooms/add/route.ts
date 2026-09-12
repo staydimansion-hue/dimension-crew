@@ -17,18 +17,28 @@ export async function POST(request: Request) {
 
   const today = kstDateString();
 
-  // 이미 오늘 그 객실에 미배정 태스크가 있으면 그걸 가져가고, 없으면 새로 만든다.
-  const { data: existing, error: existingError } = await supabaseAdmin
+  // 오늘 그 객실에 이미 배정/진행 중인 태스크가 있는지 먼저 확인한다(다른 사람이 이미
+  // 배정받았거나 청소 중인 방을 중복으로 추가하는 것을 막기 위함 — 중복 레코드가 생기면
+  // 어드민 배정 화면에서 오류가 나는 원인이 됨).
+  const { data: existingRows, error: existingError } = await supabaseAdmin
     .from("room_tasks")
-    .select("id")
+    .select("id, staff_id, status")
     .eq("work_date", today)
     .eq("room_id", roomId)
-    .is("staff_id", null)
-    .eq("status", "todo")
-    .maybeSingle();
+    .neq("status", "carried_over")
+    .order("created_at", { ascending: true });
 
   if (existingError) {
     return NextResponse.json({ error: existingError.message }, { status: 500 });
+  }
+
+  const existing = (existingRows ?? [])[0] ?? null;
+
+  if (existing && existing.staff_id && existing.staff_id !== session.staffId) {
+    return NextResponse.json(
+      { error: "이미 다른 알바에게 배정된 방입니다." },
+      { status: 409 }
+    );
   }
 
   if (existing) {

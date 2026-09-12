@@ -36,6 +36,7 @@ export default function RoomsChecklist({ name }: { name: string }) {
   const [availableRooms, setAvailableRooms] = useState<AvailableRoom[]>([]);
   const [loading, setLoading] = useState(true);
   const [pickRoomId, setPickRoomId] = useState("");
+  const [addRoomError, setAddRoomError] = useState("");
   const [modalTaskId, setModalTaskId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [capturingCategory, setCapturingCategory] = useState<Category | null>(null);
@@ -94,11 +95,17 @@ export default function RoomsChecklist({ name }: { name: string }) {
 
   async function addRoom() {
     if (!pickRoomId) return;
-    await fetch("/api/rooms/add", {
+    setAddRoomError("");
+    const res = await fetch("/api/rooms/add", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ roomId: pickRoomId }),
     });
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      setAddRoomError(data?.error || "객실을 추가하지 못했습니다.");
+      return;
+    }
     setPickRoomId("");
     await load();
   }
@@ -209,6 +216,9 @@ export default function RoomsChecklist({ name }: { name: string }) {
               추가
             </button>
           </div>
+          {addRoomError && (
+            <div className="text-[12px] text-brick mt-2">{addRoomError}</div>
+          )}
         </div>
       )}
 

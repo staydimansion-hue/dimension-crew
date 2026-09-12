@@ -28,6 +28,7 @@ export default function AdminAssignmentsPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [staffList, setStaffList] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
+  const [assignError, setAssignError] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -48,11 +49,16 @@ export default function AdminAssignmentsPage() {
   }, [load]);
 
   async function assign(roomId: string, staffId: string) {
-    await fetch("/api/admin/assignments", {
+    setAssignError("");
+    const res = await fetch("/api/admin/assignments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ date, roomId, staffId: staffId || null }),
     });
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      setAssignError(data?.error || "배정에 실패했습니다.");
+    }
     load();
   }
 
@@ -75,6 +81,10 @@ export default function AdminAssignmentsPage() {
             />
           </label>
         </div>
+
+        {assignError && (
+          <div className="text-[13px] text-brick mb-4">{assignError}</div>
+        )}
 
         <div className="bg-card border border-line rounded-2xl overflow-x-auto">
           <table className="w-full text-[13.5px] whitespace-nowrap">

@@ -47,19 +47,32 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "날짜와 객실 정보가 필요합니다." }, { status: 400 });
   }
 
-  const { data: existing, error: existingError } = await supabaseAdmin
+  const { data: existingRows, error: existingError } = await supabaseAdmin
     .from("room_tasks")
     .select("id, status")
     .eq("work_date", date)
     .eq("room_id", roomId)
     .neq("status", "carried_over")
-    .maybeSingle();
+    .order("created_at", { ascending: true });
 
   if (existingError) {
     return NextResponse.json({ error: existingError.message }, { status: 500 });
   }
 
+  // 같은 방·날짜에 중복 레코드가 있으면(예: 자율 추가와 겹친 경우) 완료된 작업(done)이 있는 쪽을
+  // 우선 남기고, 아직 진행 전(todo)인 빈 중복 레코드만 정리한다. done 레코드는 실제 청소 기록이라
+  // 절대 삭제하지 않는다.
+  const rows = existingRows ?? [];
+  const existing = rows.find((r) => r.status === "done") ?? rows[0];
+  const duplicates = rows.filter((r) => r.id !== existing?.id && r.status === "todo");
+
   if (existing) {
+    if (duplicates.length > 0) {
+      await supabaseAdmin
+        .from("room_tasks")
+        .delete()
+        .in("id", duplicates.map((d) => d.id));
+    }
     const { error } = await supabaseAdmin
       .from("room_tasks")
       .update({ staff_id: staffId, updated_at: new Date().toISOString() })
