@@ -178,7 +178,7 @@ function RoomsFlow({ name }: { name: string }) {
 
 export default function RoomsPage() {
   return (
-    <StaffGate cardClassName="w-full max-w-md">
+    <StaffGate cardClassName="w-full max-w-md" activeTab="rooms">
       {(name) => <RoomsFlow name={name} />}
     </StaffGate>
   );

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getStaffSession } from "@/lib/staffSession";
 import { uploadTaskPhoto } from "@/lib/photoStorage";
+import { postSlackMessage } from "@/lib/slack";
 
 export async function POST(request: Request) {
   const session = await getStaffSession();
@@ -19,7 +20,7 @@ export async function POST(request: Request) {
 
   const { data: task, error: taskError } = await supabaseAdmin
     .from("room_tasks")
-    .select("id, staff_id")
+    .select("id, staff_id, rooms(number)")
     .eq("id", roomTaskId)
     .maybeSingle();
 
@@ -51,6 +52,15 @@ export async function POST(request: Request) {
 
   if (updateError) {
     return NextResponse.json({ error: updateError.message }, { status: 500 });
+  }
+
+  const channel = process.env.SLACK_ROOM_CHANNEL_ID;
+  if (channel) {
+    const room = Array.isArray(task.rooms) ? task.rooms[0] : task.rooms;
+    postSlackMessage({
+      channel,
+      text: `✅ ${room?.number ?? "?"}호 청소가 완료되었습니다. (${session.name})`,
+    }).catch((err) => console.error("슬랙 청소완료 알림 실패:", err));
   }
 
   return NextResponse.json({ ok: true });

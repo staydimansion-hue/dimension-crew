@@ -3,16 +3,20 @@
 import { useEffect, useState, type ReactNode } from "react";
 import BrandKicker from "./BrandKicker";
 import PasswordField from "./PasswordField";
+import StaffNav from "./StaffNav";
 
 type Props = {
   children: (name: string) => ReactNode;
   /** 로그인 폼과 children을 감싸는 카드의 너비 클래스 (기본: 좁은 폼용) */
   cardClassName?: string;
+  /** 하단 탭 메뉴에서 활성화할 탭. 지정하면 로그인 후 화면에 하단 메뉴가 보인다. */
+  activeTab?: "checkin" | "rooms" | "calendar";
 };
 
 export default function StaffGate({
   children,
   cardClassName = "w-full max-w-sm",
+  activeTab,
 }: Props) {
   const [phase, setPhase] = useState<"checking" | "login" | "ready">("checking");
   const [name, setName] = useState("");
@@ -60,7 +64,11 @@ export default function StaffGate({
   }
 
   return (
-    <div className="min-h-dvh flex flex-col items-center justify-center bg-bg px-6 py-10">
+    <div
+      className={`min-h-dvh flex flex-col items-center justify-center bg-bg px-6 py-10 ${
+        phase === "ready" && activeTab ? "pb-24" : ""
+      }`}
+    >
       <BrandKicker />
       <div className={cardClassName}>
         {phase === "checking" && (
@@ -123,6 +131,7 @@ export default function StaffGate({
           매니저에게 초기화를 요청하세요
         </p>
       )}
+      {phase === "ready" && activeTab && <StaffNav active={activeTab} />}
     </div>
   );
 }

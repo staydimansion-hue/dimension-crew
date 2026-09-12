@@ -191,5 +191,7 @@ function CheckinFlow({ name }: { name: string }) {
 }
 
 export default function CheckinPage() {
-  return <StaffGate>{(name) => <CheckinFlow name={name} />}</StaffGate>;
+  return (
+    <StaffGate activeTab="checkin">{(name) => <CheckinFlow name={name} />}</StaffGate>
+  );
 }

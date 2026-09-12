@@ -165,7 +165,7 @@ function CalendarFlow({ name }: { name: string }) {
 
 export default function CalendarPage() {
   return (
-    <StaffGate cardClassName="w-full max-w-md">
+    <StaffGate cardClassName="w-full max-w-md" activeTab="calendar">
       {(name) => <CalendarFlow name={name} />}
     </StaffGate>
   );
