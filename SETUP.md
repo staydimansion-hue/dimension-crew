@@ -5,7 +5,8 @@
 1. https://supabase.com 에서 새 프로젝트 생성
 2. **SQL Editor**에서 `supabase/schema.sql` 내용을 그대로 실행 (1-1, 출퇴근)
 3. **SQL Editor**에서 `supabase/schema_rooms.sql` 내용을 그대로 실행 (1-2, 객실 청소 — 객실 16개실 시드 데이터 포함)
-4. **Project Settings > API**에서 `Project URL`과 `service_role` 키를 복사
+4. **SQL Editor**에서 `supabase/schema_photo_category.sql` 내용을 그대로 실행 (청소 사진 객실/욕실 구분)
+5. **Project Settings > API**에서 `Project URL`과 `service_role` 키를 복사
 
 ⚠️ 사진 저장용 Storage 버킷(`task-photos`)은 앱이 첫 사진 업로드 시 자동으로 생성합니다. 별도로 만들 필요 없습니다.
 
