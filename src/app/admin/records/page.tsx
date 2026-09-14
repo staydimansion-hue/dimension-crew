@@ -106,7 +106,7 @@ export default function AdminRecordsPage() {
             <select
               value={staffId}
               onChange={(e) => setStaffId(e.target.value)}
-              className="border border-line rounded-lg px-3 py-2 text-[13px] bg-card"
+              className="border border-line rounded-lg pl-3 pr-8 py-2 text-[13px] bg-card"
             >
               <option value="">전체</option>
               {staffList.map((s) => (

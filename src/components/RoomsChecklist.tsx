@@ -199,7 +199,7 @@ export default function RoomsChecklist({ name }: { name: string }) {
             <select
               value={pickRoomId}
               onChange={(e) => setPickRoomId(e.target.value)}
-              className="flex-1 border border-line rounded-lg px-3 py-2 text-[13px] bg-card"
+              className="flex-1 border border-line rounded-lg pl-3 pr-8 py-2 text-[13px] bg-card"
             >
               <option value="">객실 선택</option>
               {availableRooms.map((r) => (

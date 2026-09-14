@@ -118,7 +118,7 @@ export default function AdminAssignmentsPage() {
                         <select
                           value={task?.staff_id ?? ""}
                           onChange={(e) => assign(room.id, e.target.value)}
-                          className="border border-line rounded-lg px-2 py-1.5 bg-bg text-[13px]"
+                          className="border border-line rounded-lg pl-2 pr-7 py-1.5 bg-bg text-[13px]"
                         >
                           <option value="">미배정</option>
                           {staffList.map((s) => (
