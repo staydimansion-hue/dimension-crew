@@ -198,10 +198,10 @@ export async function formatAttendanceSheet() {
 
 /**
  * 급여장부(매입)인건비 탭)에서 이름이 일치하면서 시급(H열)이 비어있는
- * 가장 위쪽 행을 찾아 시급(H)/근무일정(I)/근무시간(J)을 채운다.
- * 그런 행이 없으면 새 행을 만들어 이름(F)·시급(H)·근무일정(I)·근무시간(J)만
- * 채우고, 작성자·입금요청·요청금액·업무명(A~D)과 주민등록번호(G)는 매니저가
- * 나중에 입금 요청할 때 직접 채우도록 비워둔다.
+ * 가장 위쪽 행을 찾아 월(B)/일자(C)/시급(H)/근무일정(I)/근무시간(J)을 채운다.
+ * 그런 행이 없으면 새 행을 만들어 월(B)·일자(C)·이름(F)·시급(H)·근무일정(I)·
+ * 근무시간(J)만 채우고, 작성자·요청금액·업무명(A,D)과 주민등록번호(G)는
+ * 매니저가 나중에 입금 요청할 때 직접 채우도록 비워둔다.
  */
 export async function writePayrollEntry(params: {
   name: string;
@@ -209,6 +209,7 @@ export async function writePayrollEntry(params: {
   startTimeStr: string;
   endTimeStr: string;
   hoursWorked: number;
+  workDate: string; // "YYYY-MM-DD"
 }): Promise<{ row: number; created: boolean }> {
   const { sheets, spreadsheetId } = getSheetsClient();
 
@@ -232,6 +233,9 @@ export async function writePayrollEntry(params: {
   const roundedMinutes = Math.round(totalMinutes / 10) * 10;
   const roundedHours = Math.round((roundedMinutes / 60) * 100) / 100;
   const scheduleStr = `${params.startTimeStr} ~ ${params.endTimeStr} (휴게 없음)`;
+  const [, monthStr, dayStr] = params.workDate.split("-");
+  const month = Number(monthStr);
+  const day = Number(dayStr);
 
   if (targetRow === -1) {
     const appendRes = await sheets.spreadsheets.values.append({
@@ -241,7 +245,7 @@ export async function writePayrollEntry(params: {
       insertDataOption: "INSERT_ROWS",
       requestBody: {
         values: [
-          ["", "", "", "", "", params.name, "", params.hourlyWage, scheduleStr, roundedHours],
+          ["", month, day, "", "", params.name, "", params.hourlyWage, scheduleStr, roundedHours],
         ],
       },
     });
@@ -253,6 +257,15 @@ export async function writePayrollEntry(params: {
     }
     return { row: rowNumber, created: true };
   }
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range: `${PAYROLL_TAB_NAME}!B${targetRow}:C${targetRow}`,
+    valueInputOption: "RAW",
+    requestBody: {
+      values: [[month, day]],
+    },
+  });
 
   await sheets.spreadsheets.values.update({
     spreadsheetId,

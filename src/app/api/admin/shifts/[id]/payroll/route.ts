@@ -11,7 +11,7 @@ export async function POST(
 
   const { data: shift, error } = await supabaseAdmin
     .from("shifts")
-    .select("id, clock_in_at, clock_out_at, hours_worked, hourly_wage, staff(name)")
+    .select("id, work_date, clock_in_at, clock_out_at, hours_worked, hourly_wage, staff(name)")
     .eq("id", id)
     .maybeSingle();
 
@@ -41,6 +41,7 @@ export async function POST(
       startTimeStr: kstTimeString(shift.clock_in_at),
       endTimeStr: kstTimeString(shift.clock_out_at),
       hoursWorked: shift.hours_worked,
+      workDate: shift.work_date,
     });
 
     const { error: updateError } = await supabaseAdmin
