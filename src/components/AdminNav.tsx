@@ -10,6 +10,7 @@ type Tab =
   | "assignments"
   | "rooms"
   | "records"
+  | "metrics"
   | "settings"
   | "qr";
 
@@ -20,6 +21,7 @@ const TABS: { key: Tab; label: string; href: string }[] = [
   { key: "assignments", label: "객실 배정", href: "/admin/assignments" },
   { key: "rooms", label: "객실 관리", href: "/admin/rooms" },
   { key: "records", label: "청소 기록", href: "/admin/records" },
+  { key: "metrics", label: "근무지표", href: "/admin/metrics" },
   { key: "settings", label: "설정", href: "/admin/settings" },
   { key: "qr", label: "QR 코드", href: "/admin/qr" },
 ];
