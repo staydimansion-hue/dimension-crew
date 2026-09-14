@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
   }
 
-  const origin = new URL(request.url).origin;
+  const origin = process.env.APP_URL || new URL(request.url).origin;
   const now = new Date();
   const todayStr = kstDateString(now);
 
