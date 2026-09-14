@@ -94,16 +94,16 @@ export async function GET(request: Request) {
     }
   }
 
-  // 사진
+  // 사진 (객실/욕실 카테고리별로 각각 보존)
   const { data: photos } = await supabaseAdmin
     .from("task_photos")
-    .select("room_task_id, storage_path")
+    .select("room_task_id, storage_path, category")
     .in("room_task_id", rows.map((r) => r.id).length ? rows.map((r) => r.id) : ["-"]);
 
-  const photosByTask = new Map<string, string[]>();
+  const photosByTask = new Map<string, { storage_path: string; category: string }[]>();
   for (const p of photos ?? []) {
     const arr = photosByTask.get(p.room_task_id) ?? [];
-    arr.push(p.storage_path);
+    arr.push(p);
     photosByTask.set(p.room_task_id, arr);
   }
 
@@ -111,10 +111,15 @@ export async function GET(request: Request) {
     rows.map(async (r) => {
       const room = one(r.rooms);
       const staff = one(r.staff);
-      const paths = photosByTask.get(r.id) ?? [];
-      const photoUrls = (
-        await Promise.all(paths.map((p) => getPhotoSignedUrl(p)))
-      ).filter((u): u is string => !!u);
+      const taskPhotos = photosByTask.get(r.id) ?? [];
+      const photoList = (
+        await Promise.all(
+          taskPhotos.map(async (p) => ({
+            category: p.category,
+            url: await getPhotoSignedUrl(p.storage_path),
+          }))
+        )
+      ).filter((p): p is { category: string; url: string } => !!p.url);
       return {
         id: r.id,
         workDate: r.work_date,
@@ -124,7 +129,7 @@ export async function GET(request: Request) {
         source: r.source,
         completedAt: r.completed_at,
         durationMinutes: durationMinutesByTaskId.get(r.id) ?? null,
-        photoUrls,
+        photos: photoList,
       };
     })
   );

@@ -3,6 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import AdminNav from "@/components/AdminNav";
 
+type Photo = { category: string; url: string };
+
 type RecordRow = {
   id: string;
   workDate: string;
@@ -12,8 +14,12 @@ type RecordRow = {
   source: string;
   completedAt: string | null;
   durationMinutes: number | null;
-  photoUrls: string[];
+  photos: Photo[];
 };
+
+function categoryLabel(category: string): string {
+  return category === "room" ? "객실" : category === "bathroom" ? "욕실" : category;
+}
 
 type Summary = {
   staffName: string;
@@ -182,13 +188,18 @@ export default function AdminRecordsPage() {
                       {r.durationMinutes != null ? `${r.durationMinutes}분` : "-"}
                     </td>
                     <td className="px-4 py-3">
-                      {r.photoUrls.length > 0 ? (
-                        <button
-                          onClick={() => setLightbox(r.photoUrls[0])}
-                          className="text-accent underline"
-                        >
-                          보기
-                        </button>
+                      {r.photos.length > 0 ? (
+                        <div className="flex gap-3">
+                          {r.photos.map((p) => (
+                            <button
+                              key={p.category}
+                              onClick={() => setLightbox(p.url)}
+                              className="text-accent underline"
+                            >
+                              {categoryLabel(p.category)}
+                            </button>
+                          ))}
+                        </div>
                       ) : (
                         <span className="text-muted">-</span>
                       )}
