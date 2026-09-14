@@ -64,6 +64,20 @@ export default function AdminStaffPage() {
     load();
   }
 
+  async function deleteStaff(staff: Staff) {
+    if (!confirm(`${staff.name}님을 목록에서 완전히 삭제할까요? 되돌릴 수 없습니다.`)) return;
+    setError("");
+    setNotice("");
+    const res = await fetch(`/api/admin/staff/${staff.id}`, { method: "DELETE" });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error || "삭제에 실패했습니다.");
+      return;
+    }
+    setNotice(`${staff.name}님을 삭제했습니다.`);
+    load();
+  }
+
   async function resetPin(staff: Staff) {
     await fetch(`/api/admin/staff/${staff.id}`, {
       method: "PATCH",
@@ -204,6 +218,9 @@ export default function AdminStaffPage() {
                       </button>
                       <button onClick={() => resetPin(s)} className="text-muted underline">
                         PIN 초기화
+                      </button>
+                      <button onClick={() => deleteStaff(s)} className="text-brick underline">
+                        삭제
                       </button>
                     </td>
                   </tr>
