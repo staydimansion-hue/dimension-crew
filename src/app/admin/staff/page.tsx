@@ -21,6 +21,7 @@ export default function AdminStaffPage() {
   const [notice, setNotice] = useState("");
   const [wageModalStaff, setWageModalStaff] = useState<Staff | null>(null);
   const [wageModalValue, setWageModalValue] = useState("");
+  const [wageInfoOpen, setWageInfoOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -160,16 +161,42 @@ export default function AdminStaffPage() {
           <table className="w-full text-[13.5px] whitespace-nowrap">
             <thead>
               <tr className="text-left">
-                {["이름", "전화번호", "현재시급(변경)", "상태", "작업"].map(
-                  (h) => (
-                    <th
-                      key={h}
-                      className="px-4 py-3 text-[11px] tracking-[0.1em] text-muted uppercase font-semibold border-b border-line"
-                    >
-                      {h}
-                    </th>
-                  )
-                )}
+                {["이름", "전화번호"].map((h) => (
+                  <th
+                    key={h}
+                    className="px-4 py-3 text-[11px] tracking-[0.1em] text-muted uppercase font-semibold border-b border-line"
+                  >
+                    {h}
+                  </th>
+                ))}
+                <th className="px-4 py-3 text-[11px] tracking-[0.1em] text-muted uppercase font-semibold border-b border-line">
+                  <span className="inline-flex items-center gap-1.5">
+                    현재시급(변경)
+                    <span className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setWageInfoOpen((v) => !v)}
+                        className="w-3.5 h-3.5 rounded-full border border-muted text-muted text-[9px] leading-none flex items-center justify-center font-bold normal-case"
+                        aria-label="시급 변경 안내"
+                      >
+                        !
+                      </button>
+                      {wageInfoOpen && (
+                        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 bg-ink text-bg text-[11px] normal-case tracking-normal font-normal rounded-lg px-3 py-2 whitespace-nowrap z-10 shadow-lg">
+                          변경 시부터 적용
+                        </div>
+                      )}
+                    </span>
+                  </span>
+                </th>
+                {["상태", "작업"].map((h) => (
+                  <th
+                    key={h}
+                    className="px-4 py-3 text-[11px] tracking-[0.1em] text-muted uppercase font-semibold border-b border-line"
+                  >
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
