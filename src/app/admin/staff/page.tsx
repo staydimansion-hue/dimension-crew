@@ -160,7 +160,7 @@ export default function AdminStaffPage() {
           <table className="w-full text-[13.5px] whitespace-nowrap">
             <thead>
               <tr className="text-left">
-                {["이름", "전화번호", "현재 시급", "시급 변경 (오늘부터)", "상태", "작업"].map(
+                {["이름", "전화번호", "현재시급(변경)", "상태", "작업"].map(
                   (h) => (
                     <th
                       key={h}
@@ -175,7 +175,7 @@ export default function AdminStaffPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-6 text-center text-muted">
+                  <td colSpan={5} className="px-4 py-6 text-center text-muted">
                     불러오는 중...
                   </td>
                 </tr>
@@ -184,9 +184,6 @@ export default function AdminStaffPage() {
                   <tr key={s.id} className="border-b border-line last:border-0">
                     <td className="px-4 py-3 font-semibold">{s.name}</td>
                     <td className="px-4 py-3 text-muted">{s.phone}</td>
-                    <td className="px-4 py-3">
-                      {s.hourly_wage != null ? `${s.hourly_wage.toLocaleString()}원` : "-"}
-                    </td>
                     <td className="px-4 py-3">
                       <button
                         onClick={() => {
