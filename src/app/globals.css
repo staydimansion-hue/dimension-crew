@@ -48,6 +48,26 @@ a {
   touch-action: manipulation;
 }
 
+/* 클릭 가능한 요소는 마우스 오버 시 손가락(포인터) 커서로 표시 */
+button:not(:disabled),
+a,
+select {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+
+/* 숫자 입력의 위/아래 스피너 화살표 제거 (시급 등 직접 타이핑하는 값) */
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 /* 브라우저 기본 select 화살표는 폭/여백이 텍스트 인풋과 안 맞아서
    같은 필터 줄에 놓으면 높이·우측 여백이 어긋나 보인다. 직접 그린
    화살표로 통일하고, 각 select에는 화살표 자리만큼 pr-8을 준다. */
