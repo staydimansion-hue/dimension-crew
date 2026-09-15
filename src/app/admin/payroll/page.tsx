@@ -117,7 +117,7 @@ export default function AdminPayrollPage() {
         </div>
 
         {data && data.staffSummaries.length > 0 && (
-          <div className="mb-6">
+          <div className="mb-6 text-center">
             <div className="text-[32px] font-bold leading-none">
               {totalAmount.toLocaleString()}원
             </div>
@@ -145,6 +145,24 @@ export default function AdminPayrollPage() {
 
         {!loading && data && data.staffSummaries.length === 0 && (
           <div className="text-muted text-[13px] mb-8">이 사이클에 완료된 근무가 없습니다.</div>
+        )}
+
+        {data && data.staffSummaries.length > 0 && (
+          <div className="flex flex-col gap-3 mb-8">
+            {data.staffSummaries.map((s) => (
+              <div key={s.staffId} className="bg-card border border-line rounded-xl p-4">
+                <div className="text-[13px] font-semibold mb-1">{s.name}</div>
+                <div className="text-[12px] text-muted">
+                  {s.hours.toFixed(1)}시간 · {s.amount.toLocaleString()}원
+                </div>
+                {s.pendingCount > 0 && (
+                  <div className="text-[11px] text-brick mt-1">
+                    급여장부 미입력 {s.pendingCount}건
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         )}
 
         <div className="bg-card border border-line rounded-2xl overflow-x-auto">
