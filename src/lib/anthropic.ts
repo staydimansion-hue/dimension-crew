@@ -46,11 +46,10 @@ function chatText(messages: SlackMessage[]): string {
  */
 export function buildStubDailyPlan(
   items: ChecklistItem[],
-  messages: SlackMessage[],
-  teamLabel = "운영"
+  messages: SlackMessage[]
 ): string {
   const lines: string[] = [];
-  lines.push(`:coffee: *오늘의 ${teamLabel} 브리핑 (샘플/스텁)*`);
+  lines.push(":coffee: *오늘의 운영 브리핑 (샘플/스텁)*");
   lines.push("");
   lines.push(buildChecklistMessage(items));
   lines.push("");
@@ -69,22 +68,21 @@ export function buildStubDailyPlan(
  */
 export async function buildDailyPlan(
   items: ChecklistItem[],
-  messages: SlackMessage[],
-  teamLabel = "운영팀"
+  messages: SlackMessage[]
 ): Promise<string> {
   if (!process.env.ANTHROPIC_API_KEY) {
     throw new Error("ANTHROPIC_API_KEY 환경변수가 설정되지 않았습니다.");
   }
 
-  const prompt = `당신은 "스테이디멘션" 숙박시설 ${teamLabel}의 프로젝트 매니저(PM)입니다. 매일 아침 이 채널에 오늘 할 일을 안내합니다.
+  const prompt = `당신은 "스테이디멘션" 숙박시설 운영팀의 프로젝트 매니저(PM)입니다. 매일 아침 운영방에 오늘 할 일을 안내합니다.
 
 ## 현재 체크리스트
 ${checklistText(items)}
 
-## 최근 채널 대화
+## 최근 운영방 대화
 ${chatText(messages)}
 
-위 정보를 바탕으로 채널에 보낼 한국어 아침 브리핑 메시지를 작성하세요. 다음을 포함합니다:
+위 정보를 바탕으로 운영방에 보낼 한국어 아침 브리핑 메시지를 작성하세요. 다음을 포함합니다:
 1) 오늘 해야 할 일: 마감이 임박했거나 지난 항목, 진행중인 항목을 우선순위대로 정리
 2) 다음 일정: 오늘 당장은 아니지만 곧 다가오는 항목
 3) 대화에서 새로 언급된 할 일이나 일정 변경이 있으면 반영해서 "이렇게 추가/반영할까요?" 형태로 제안 (체크리스트 상태를 실제로 바꾸지는 않습니다 — 제안만 합니다)
@@ -146,14 +144,13 @@ export function interpretPlanReplyStub(
 export async function interpretPlanReply(
   planMessage: string,
   items: ChecklistItem[],
-  replyText: string,
-  teamLabel = "운영팀"
+  replyText: string
 ): Promise<PlanReplyResult> {
   if (!process.env.ANTHROPIC_API_KEY) {
     return interpretPlanReplyStub(planMessage, replyText);
   }
 
-  const prompt = `당신은 "스테이디멘션" 숙박시설 ${teamLabel}의 프로젝트 매니저(PM)입니다. 오늘 아침 아래 계획을 이 채널에 보냈고, 매니저가 답장을 남겼습니다.
+  const prompt = `당신은 "스테이디멘션" 숙박시설 운영팀의 프로젝트 매니저(PM)입니다. 오늘 아침 아래 계획을 운영방에 보냈고, 매니저가 답장을 남겼습니다.
 
 ## 오늘 보낸 계획
 ${planMessage}

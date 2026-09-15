@@ -4,7 +4,6 @@ import { kstDateString } from "@/lib/kst";
 import {
   fetchChecklistItems,
   fetchChannelHistory,
-  getChecklistChannelByKey,
   postSlackMessage,
 } from "@/lib/slack";
 import { buildDailyPlan, buildStubDailyPlan } from "@/lib/anthropic";
@@ -25,7 +24,6 @@ function isAuthorized(request: Request): boolean {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const dryRun = searchParams.get("dryRun") === "1";
-  const channelKey = searchParams.get("channel") ?? "ops";
 
   // 드라이런: Slack/Supabase 없이 샘플 데이터로 실제 전송될 메시지를 렌더링만 해서 반환.
   // 실제 발송/저장이 없으므로 인증/시크릿이 필요 없습니다.
@@ -38,7 +36,7 @@ export async function GET(request: Request) {
       ok: true,
       dryRun: true,
       mode: useAi ? "sample-data + Claude (no Slack send)" : "sample-data + stub (no Slack send)",
-      channel_key: channelKey,
+      channel_target: process.env.SLACK_OPERATIONS_CHANNEL_ID ?? "(SLACK_OPERATIONS_CHANNEL_ID 미설정)",
       message,
     });
   }
@@ -47,54 +45,47 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "인증에 실패했습니다." }, { status: 401 });
   }
 
-  try {
-    const channel = await getChecklistChannelByKey(channelKey);
-    if (!channel) {
-      return NextResponse.json(
-        { error: `checklist_channels에 key="${channelKey}" 채널이 없습니다.` },
-        { status: 404 }
-      );
-    }
+  const channel = process.env.SLACK_OPERATIONS_CHANNEL_ID;
+  if (!channel) {
+    return NextResponse.json(
+      { error: "SLACK_OPERATIONS_CHANNEL_ID 환경변수가 설정되지 않았습니다." },
+      { status: 500 }
+    );
+  }
 
+  try {
     const [items, history] = await Promise.all([
-      fetchChecklistItems(channel.id),
-      fetchChannelHistory(channel.slackChannelId, 50),
+      fetchChecklistItems(),
+      fetchChannelHistory(50),
     ]);
 
     const useAi = Boolean(process.env.ANTHROPIC_API_KEY);
     const message = useAi
-      ? await buildDailyPlan(items, history, channel.label)
-      : buildStubDailyPlan(items, history, channel.label);
+      ? await buildDailyPlan(items, history)
+      : buildStubDailyPlan(items, history);
 
-    const slackResponse = (await postSlackMessage({
-      channel: channel.slackChannelId,
-      text: message,
-    })) as { ts?: string };
+    const slackResponse = (await postSlackMessage({ channel, text: message })) as {
+      ts?: string;
+    };
 
     const planDate = kstDateString();
     const { error } = await supabaseAdmin.from("checklist_daily_plan").upsert(
       {
         plan_date: planDate,
-        channel_id: channel.id,
         message_text: message,
         status: "pending",
         revision: 0,
         slack_message_ts: slackResponse.ts ?? null,
         updated_at: new Date().toISOString(),
       },
-      { onConflict: "plan_date,channel_id" }
+      { onConflict: "plan_date" }
     );
 
     if (error) {
       console.error("checklist_daily_plan 저장 실패:", error);
     }
 
-    return NextResponse.json({
-      ok: true,
-      plan_date: planDate,
-      channel_key: channel.key,
-      checklist_count: items.length,
-    });
+    return NextResponse.json({ ok: true, plan_date: planDate, checklist_count: items.length });
   } catch (err) {
     const messageText = err instanceof Error ? err.message : "알 수 없는 오류";
     return NextResponse.json({ error: messageText }, { status: 500 });
