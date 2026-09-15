@@ -8,6 +8,11 @@ const MODEL_ID = "claude-opus-5";
 export const CONFIRM_QUESTION =
   "이 계획대로 진행할까요? 다른 의견 있으면 이 채널에 답장해주세요.";
 
+// Claude가 슬랙에 실제로 없는 이모지 shortcode(예: :pause_button:)를 지어내
+// 텍스트 그대로 노출되는 걸 막기 위해, 확실히 존재하는 것만 예시로 제한한다.
+const EMOJI_GUIDE =
+  "이모지는 슬랙 기본 내장 이모지 중 확실히 존재하는 것만 쓰세요 (예: :white_check_mark: :warning: :clipboard: :memo: :bell: :calendar: :speech_balloon: :large_red_square: :large_yellow_square: :white_large_square: :dart: :coffee: :sparkles: :hourglass_flowing_sand:). 존재가 불확실한 이모지 shortcode는 절대 만들어 쓰지 마세요 — 렌더링 안 되고 :이름: 그대로 글자로 노출됩니다.";
+
 function client(): Anthropic {
   return new Anthropic();
 }
@@ -88,7 +93,7 @@ ${chatText(messages)}
 3) 대화에서 새로 언급된 할 일이나 일정 변경이 있으면 반영해서 "이렇게 추가/반영할까요?" 형태로 제안 (체크리스트 상태를 실제로 바꾸지는 않습니다 — 제안만 합니다)
 4) 마지막 줄에는 반드시 다음 질문을 그대로 넣습니다: "${CONFIRM_QUESTION}"
 
-Slack 메시지로 바로 보낼 수 있도록, 마크다운 제목(#) 없이 이모지와 줄바꿈으로 읽기 쉽게 작성하세요.`;
+Slack 메시지로 바로 보낼 수 있도록, 마크다운 제목(#) 없이 이모지와 줄바꿈으로 읽기 쉽게 작성하세요. ${EMOJI_GUIDE}`;
 
   const response = await client().messages.create({
     model: MODEL_ID,
@@ -167,7 +172,7 @@ ${checklistText(items)}
 {"confirmed": true 또는 false, "message": "..."}
 
 - confirmed가 true면 message는 짧은 한국어 확인 메시지("확정했습니다" 등)로 채우세요.
-- confirmed가 false면 message는 매니저의 의견을 반영해서 다시 정리한 전체 계획 메시지로 채우세요. 실제 체크리스트 상태를 자동으로 바꿨다고 말하지 말고, 제안 형태로 작성하고 마지막 줄에 반드시 "${CONFIRM_QUESTION}"를 그대로 포함하세요.`;
+- confirmed가 false면 message는 매니저의 의견을 반영해서 다시 정리한 전체 계획 메시지로 채우세요. 실제 체크리스트 상태를 자동으로 바꿨다고 말하지 말고, 제안 형태로 작성하고 마지막 줄에 반드시 "${CONFIRM_QUESTION}"를 그대로 포함하세요. ${EMOJI_GUIDE}`;
 
   const response = await client().messages.create({
     model: MODEL_ID,
