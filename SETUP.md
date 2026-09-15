@@ -10,7 +10,8 @@
 6. **SQL Editor**에서 `supabase/schema_qr_token.sql` 내용을 그대로 실행 (QR을 앱 안 카메라 스캔 전용으로 전환하기 위한 토큰 생성)
 7. **SQL Editor**에서 `supabase/schema_payroll_row.sql` 내용을 그대로 실행 (급여장부 자동입력 여부 기록용 컬럼)
 8. **SQL Editor**에서 `supabase/schema_sheet_exports.sql` 내용을 그대로 실행 (인건비 월별 알림/공지 상태 기록용 테이블)
-9. **Project Settings > API**에서 `Project URL`과 `service_role` 키를 복사
+9. **SQL Editor**에서 `supabase/checklist_items.sql` → `supabase/checklist_items_seed.sql` 순서로 실행 (운영방 일일 체크리스트 봇)
+10. **Project Settings > API**에서 `Project URL`과 `service_role` 키를 복사
 
 ⚠️ 사진 저장용 Storage 버킷(`task-photos`)은 앱이 첫 사진 업로드 시 자동으로 생성합니다. 별도로 만들 필요 없습니다.
 
@@ -78,8 +79,23 @@ npm run dev
 7. **cron-job.org**(무료) 가입 → 새 크론잡 생성 → URL에 `https://<배포주소>/api/cron/payroll-reminder?token=<6번에서 만든 값>` 입력 → 매일 1회(예: 오전 9시) 실행되게 설정
 8. **동작 확인**: 브라우저에서 위 URL을 직접 열어봐서 `{"skipped":true,"today":"...","reminderDate":"..."}` 같은 JSON이 뜨면 정상 작동 중인 것입니다(오늘이 알림일이 아니라 건너뛴 것). `{"error":"..."}`가 뜨면 메시지에 원인이 나오니 그에 맞게 환경변수를 다시 확인하세요.
 
+## 8. 슬랙 운영방 일일 체크리스트 봇
+
+`manage_emp` 저장소(PR #1, `claude/slack-session-84d5ql`)에서 가져온 기능입니다. 위 7번과 같은 `SLACK_BOT_TOKEN`, `CRON_SECRET`을 공용으로 사용합니다.
+
+1. 1번에서 `checklist_items.sql` / `checklist_items_seed.sql`을 이미 실행했는지 확인
+2. Slack App(7번에서 만든 것과 동일한 앱 가능) → **OAuth & Permissions**에서 Bot Token Scopes에 `chat:write`, `channels:history`(또는 `groups:history`) 추가 → 재설치 후 Bot User OAuth Token이 `SLACK_BOT_TOKEN`과 같은지 확인
+3. 봇을 운영방 채널에 초대하고, 채널 ID 확인 → Railway `SLACK_OPERATIONS_CHANNEL_ID`에 등록
+4. Claude API 키 발급(https://console.anthropic.com) → Railway `ANTHROPIC_API_KEY`에 등록 (없으면 진행 요약은 결정적 스텁 메시지로 대체됨)
+5. 드라이런 확인: `npm run simulate` (로컬) 또는 배포 후 `/api/cron/daily-checklist?dryRun=1`, `/api/cron/checklist-summary?dryRun=1` (실제 발송/시크릿 불필요)
+6. **cron-job.org** 등 외부 스케줄러에 아래 두 엔드포인트를 원하는 주기(예: 매일 아침 브리핑, 저녁 요약)로 등록
+   - `https://<배포주소>/api/cron/daily-checklist?token=<CRON_SECRET>`
+   - `https://<배포주소>/api/cron/checklist-summary?token=<CRON_SECRET>`
+
+⚠️ `/admin/checklist` 어드민 페이지는 아직 없습니다(체크리스트 항목은 Supabase에서 직접 관리).
+
 ## 참고
 
 - 1-1(로그인/QR 출퇴근/급여 계산·캘린더/어드민 계정·시급·설정·근무 승인)과 1-2(객실 청소 체크·사진, 객실/배정/기록 관리)까지 포함합니다. GPS 위치 확인 기능은 2026-09-12 매니저 요청으로 제거했습니다.
-- 슬랙 연동은 다음 단계(2, 3)에서 진행합니다. 자세한 내용은 `docs/기획서.md` 참고.
-- 시크릿(Supabase 키, Google 서비스 계정 JSON)은 절대 Git에 커밋하지 마세요.
+- 인건비 월별 자동 알림, 운영방 일일 체크리스트 봇까지 슬랙 연동을 마쳤습니다. 자세한 기획 내용은 `docs/기획서.md` 참고.
+- 시크릿(Supabase 키, Google 서비스 계정 JSON, Slack 토큰, Anthropic 키)은 절대 Git에 커밋하지 마세요.
