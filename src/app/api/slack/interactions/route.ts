@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { postSlackMessage, verifySlackSignature } from "@/lib/slack";
 import { cycleLabel } from "@/lib/payCycle";
+import { kstDateString } from "@/lib/kst";
+import { fetchChecklistItems, buildChecklistBlocks } from "@/lib/checklist";
 
 export async function POST(request: Request) {
   const rawBody = await request.text();
@@ -26,7 +28,50 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  const action = payload.actions?.[0];
+  const actions = payload.actions ?? [];
+
+  const CHECKLIST_ACTIONS: Record<
+    string,
+    { status: "todo" | "in_progress" | "done"; completed: boolean }
+  > = {
+    checklist_progress: { status: "in_progress", completed: false },
+    checklist_done: { status: "done", completed: true },
+    checklist_reset: { status: "todo", completed: false },
+  };
+
+  const checklistAction = actions.find(
+    (a: { action_id?: string }) => a?.action_id && a.action_id in CHECKLIST_ACTIONS
+  );
+  if (checklistAction) {
+    const itemId = checklistAction.value as string | undefined;
+    if (itemId) {
+      const now = new Date().toISOString();
+      const { status, completed } = CHECKLIST_ACTIONS[checklistAction.action_id];
+      await supabaseAdmin
+        .from("checklist_items")
+        .update({
+          status,
+          completed_at: completed ? now : null,
+          updated_at: now,
+        })
+        .eq("id", itemId);
+
+      const items = await fetchChecklistItems();
+      const { blocks, text } = buildChecklistBlocks(items, kstDateString());
+
+      const responseUrl = payload.response_url as string | undefined;
+      if (responseUrl) {
+        await fetch(responseUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ replace_original: true, blocks, text }),
+        });
+      }
+    }
+    return NextResponse.json({ ok: true });
+  }
+
+  const action = actions[0];
   if (action?.action_id === "announce_payroll_done") {
     const cycleKey = action.value as string;
     const payrollChannel = process.env.SLACK_PAYROLL_CHANNEL_ID;
