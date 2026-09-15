@@ -19,7 +19,8 @@ export default function AdminStaffPage() {
   const [hourlyWage, setHourlyWage] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [wageDrafts, setWageDrafts] = useState<Record<string, string>>({});
+  const [wageModalStaff, setWageModalStaff] = useState<Staff | null>(null);
+  const [wageModalValue, setWageModalValue] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -87,8 +88,7 @@ export default function AdminStaffPage() {
     setNotice(`${staff.name}님 PIN을 0808로 초기화했습니다.`);
   }
 
-  async function updateWage(staff: Staff) {
-    const value = wageDrafts[staff.id];
+  async function updateWage(staff: Staff, value: string) {
     const hourlyWage = Number(value);
     if (!Number.isFinite(hourlyWage) || hourlyWage < 0) return;
     const res = await fetch(`/api/admin/staff/${staff.id}/wage`, {
@@ -102,6 +102,7 @@ export default function AdminStaffPage() {
     } else {
       setNotice(`${staff.name}님 시급이 오늘부터 ${hourlyWage.toLocaleString()}원으로 변경됩니다.`);
     }
+    setWageModalStaff(null);
     load();
   }
 
@@ -187,23 +188,15 @@ export default function AdminStaffPage() {
                       {s.hourly_wage != null ? `${s.hourly_wage.toLocaleString()}원` : "-"}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex gap-2 items-center">
-                        <input
-                          type="number"
-                          placeholder="새 시급"
-                          className="w-24 border border-line rounded px-2 py-1.5 bg-bg"
-                          value={wageDrafts[s.id] ?? ""}
-                          onChange={(e) =>
-                            setWageDrafts((prev) => ({ ...prev, [s.id]: e.target.value }))
-                          }
-                        />
-                        <button
-                          onClick={() => updateWage(s)}
-                          className="text-accent underline text-xs whitespace-nowrap"
-                        >
-                          변경
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => {
+                          setWageModalStaff(s);
+                          setWageModalValue(String(s.hourly_wage ?? ""));
+                        }}
+                        className="border border-line rounded-lg px-3 py-1.5 text-[13px] bg-bg"
+                      >
+                        {s.hourly_wage != null ? `${s.hourly_wage.toLocaleString()}원` : "설정"}
+                      </button>
                     </td>
                     <td className="px-4 py-3">
                       {s.is_active ? (
@@ -230,6 +223,46 @@ export default function AdminStaffPage() {
           </table>
         </div>
       </div>
+
+      {wageModalStaff && (
+        <div
+          onClick={() => setWageModalStaff(null)}
+          className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-card rounded-2xl w-full max-w-xs p-6 flex flex-col gap-4"
+          >
+            <div className="text-[15px] font-bold">{wageModalStaff.name}님 시급 변경</div>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[10.5px] tracking-[0.1em] text-muted uppercase">
+                시급(원)
+              </span>
+              <input
+                type="number"
+                autoFocus
+                className="w-full border border-line rounded-lg px-3 py-2 text-[13px] bg-bg"
+                value={wageModalValue}
+                onChange={(e) => setWageModalValue(e.target.value)}
+              />
+            </label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setWageModalStaff(null)}
+                className="flex-1 border border-line rounded-lg py-2.5 text-[13px] text-muted"
+              >
+                취소
+              </button>
+              <button
+                onClick={() => updateWage(wageModalStaff, wageModalValue)}
+                className="flex-1 bg-accent text-bg rounded-lg py-2.5 text-[13px] font-semibold"
+              >
+                저장
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
