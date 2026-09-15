@@ -13,6 +13,13 @@ export const CONFIRM_QUESTION =
 const EMOJI_GUIDE =
   "이모지는 슬랙 기본 내장 이모지 중 확실히 존재하는 것만 쓰세요 (예: :white_check_mark: :warning: :clipboard: :memo: :bell: :calendar: :speech_balloon: :large_red_square: :large_yellow_square: :white_large_square: :dart: :coffee: :sparkles: :hourglass_flowing_sand:). 존재가 불확실한 이모지 shortcode는 절대 만들어 쓰지 마세요 — 렌더링 안 되고 :이름: 그대로 글자로 노출됩니다.";
 
+// 이 봇은 슬랙 대화를 읽고 텍스트로 요약/제안만 할 뿐, 발주·결제·예약·시간 맞춰
+// 알림 보내기 같은 실제 행동은 전혀 할 수 없다(연동된 시스템이 없음). "제가
+// 처리하겠습니다" 같은 말은 매니저가 봇이 실제로 대신 해줄 것으로 오해하게
+// 만들므로 절대 쓰지 않도록 명시한다.
+const CAPABILITY_GUIDE =
+  '당신(이 메시지를 작성하는 주체)은 실제로 발주·결제·예약을 하거나, 정해진 시각에 알림을 보내거나, 체크리스트 상태를 직접 바꾸는 어떤 실제 행동도 할 수 없습니다 — 슬랙 대화를 읽고 글로 요약·제안하는 것만 합니다. "제가 발주하겠습니다", "알림을 세팅해 드리겠습니다", "처리하겠습니다"처럼 스스로 행동을 수행할 것처럼 말하지 마세요. 대신 "발주가 필요합니다 — 담당자분이 진행해주세요", "이 시각에 알림이 필요하다는 점을 기록해뒀습니다(실제 알림은 별도로 챙겨주세요)"처럼, 무엇이 필요한지 사람에게 안내하는 방식으로만 작성하세요.';
+
 function client(): Anthropic {
   return new Anthropic();
 }
@@ -93,7 +100,9 @@ ${chatText(messages)}
 3) 대화에서 새로 언급된 할 일이나 일정 변경이 있으면 반영해서 "이렇게 추가/반영할까요?" 형태로 제안 (체크리스트 상태를 실제로 바꾸지는 않습니다 — 제안만 합니다)
 4) 마지막 줄에는 반드시 다음 질문을 그대로 넣습니다: "${CONFIRM_QUESTION}"
 
-Slack 메시지로 바로 보낼 수 있도록, 마크다운 제목(#) 없이 이모지와 줄바꿈으로 읽기 쉽게 작성하세요. ${EMOJI_GUIDE}`;
+Slack 메시지로 바로 보낼 수 있도록, 마크다운 제목(#) 없이 이모지와 줄바꿈으로 읽기 쉽게 작성하세요. ${EMOJI_GUIDE}
+
+${CAPABILITY_GUIDE}`;
 
   const response = await client().messages.create({
     model: MODEL_ID,
@@ -172,7 +181,9 @@ ${checklistText(items)}
 {"confirmed": true 또는 false, "message": "..."}
 
 - confirmed가 true면 message는 짧은 한국어 확인 메시지("확정했습니다" 등)로 채우세요.
-- confirmed가 false면 message는 매니저의 의견을 반영해서 다시 정리한 전체 계획 메시지로 채우세요. 실제 체크리스트 상태를 자동으로 바꿨다고 말하지 말고, 제안 형태로 작성하고 마지막 줄에 반드시 "${CONFIRM_QUESTION}"를 그대로 포함하세요. ${EMOJI_GUIDE}`;
+- confirmed가 false면 message는 매니저의 의견을 반영해서 다시 정리한 전체 계획 메시지로 채우세요. 실제 체크리스트 상태를 자동으로 바꿨다고 말하지 말고, 제안 형태로 작성하고 마지막 줄에 반드시 "${CONFIRM_QUESTION}"를 그대로 포함하세요. ${EMOJI_GUIDE}
+
+${CAPABILITY_GUIDE}`;
 
   const response = await client().messages.create({
     model: MODEL_ID,
