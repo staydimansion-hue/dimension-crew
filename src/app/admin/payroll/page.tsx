@@ -118,7 +118,7 @@ export default function AdminPayrollPage() {
 
         {data && data.staffSummaries.length > 0 && (
           <div className="mb-6 text-center">
-            <div className="text-[32px] font-bold leading-none">
+            <div className="text-[32px] font-bold leading-none text-accent">
               {totalAmount.toLocaleString()}원
             </div>
             <div className="text-[13px] text-muted mt-1.5">{totalHours.toFixed(1)}시간</div>
