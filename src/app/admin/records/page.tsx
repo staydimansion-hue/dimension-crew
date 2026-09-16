@@ -14,6 +14,7 @@ type RecordRow = {
   source: string;
   completedAt: string | null;
   durationMinutes: number | null;
+  notes: string | null;
   photos: Photo[];
 };
 
@@ -148,7 +149,7 @@ export default function AdminRecordsPage() {
           <table className="w-full text-[13.5px] whitespace-nowrap">
             <thead>
               <tr className="text-left">
-                {["날짜", "객실", "타입", "담당자", "경로", "완료시각", "소요시간", "사진"].map(
+                {["날짜", "객실", "타입", "담당자", "경로", "완료시각", "소요시간", "사진", "특이사항"].map(
                   (h) => (
                     <th
                       key={h}
@@ -163,13 +164,13 @@ export default function AdminRecordsPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-6 text-center text-muted">
+                  <td colSpan={9} className="px-4 py-6 text-center text-muted">
                     불러오는 중...
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-6 text-center text-muted">
+                  <td colSpan={9} className="px-4 py-6 text-center text-muted">
                     기록이 없습니다.
                   </td>
                 </tr>
@@ -203,6 +204,9 @@ export default function AdminRecordsPage() {
                       ) : (
                         <span className="text-muted">-</span>
                       )}
+                    </td>
+                    <td className="px-4 py-3 whitespace-normal max-w-[220px]">
+                      {r.notes ? r.notes : <span className="text-muted">-</span>}
                     </td>
                   </tr>
                 ))

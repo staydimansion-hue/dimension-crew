@@ -11,9 +11,12 @@ type Task = {
   status: "todo" | "done" | "carried_over";
   completed_at: string | null;
   source: string;
+  notes: string | null;
   rooms: { number: string; type_name: string } | { number: string; type_name: string }[] | null;
   photos: Photo[];
 };
+
+type ModalTab = "photos" | "notes";
 
 type AvailableRoom = { id: string; number: string; type_name: string };
 
@@ -38,8 +41,11 @@ export default function RoomsChecklist({ name }: { name: string }) {
   const [pickRoomId, setPickRoomId] = useState("");
   const [addRoomError, setAddRoomError] = useState("");
   const [modalTaskId, setModalTaskId] = useState<string | null>(null);
+  const [modalTab, setModalTab] = useState<ModalTab>("photos");
   const [uploading, setUploading] = useState(false);
   const [capturingCategory, setCapturingCategory] = useState<Category | null>(null);
+  const [notesDraft, setNotesDraft] = useState("");
+  const [savingNotes, setSavingNotes] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const load = useCallback(async () => {
@@ -81,6 +87,23 @@ export default function RoomsChecklist({ name }: { name: string }) {
   async function deletePhoto(photoId: string) {
     await fetch(`/api/rooms/photos/${photoId}`, { method: "DELETE" });
     await load();
+  }
+
+  async function saveNotes(taskId: string) {
+    setSavingNotes(true);
+    await fetch("/api/rooms/notes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ roomTaskId: taskId, notes: notesDraft }),
+    });
+    setSavingNotes(false);
+    await load();
+  }
+
+  function openModal(taskId: string, tab: ModalTab, notes: string | null) {
+    setModalTaskId(taskId);
+    setModalTab(tab);
+    setNotesDraft(notes ?? "");
   }
 
   async function carryOver(taskId: string) {
@@ -144,6 +167,9 @@ export default function RoomsChecklist({ name }: { name: string }) {
                 <th className="px-3 py-2.5 text-[10.5px] tracking-[0.1em] text-muted uppercase font-semibold">
                   사진
                 </th>
+                <th className="px-3 py-2.5 text-[10.5px] tracking-[0.1em] text-muted uppercase font-semibold">
+                  특이사항
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -162,7 +188,7 @@ export default function RoomsChecklist({ name }: { name: string }) {
                     </td>
                     <td className="px-3 py-3">
                       <button
-                        onClick={() => setModalTaskId(t.id)}
+                        onClick={() => openModal(t.id, "photos", t.notes)}
                         disabled={isCarried}
                         className={`text-[12px] px-3 py-1.5 rounded-full font-semibold disabled:opacity-40 ${
                           isDone ? "bg-sage-tint text-sage" : "bg-[#ece2d0] text-ink"
@@ -173,7 +199,7 @@ export default function RoomsChecklist({ name }: { name: string }) {
                     </td>
                     <td className="px-3 py-3">
                       <button
-                        onClick={() => setModalTaskId(t.id)}
+                        onClick={() => openModal(t.id, "photos", t.notes)}
                         disabled={isCarried}
                         className={`text-[12px] px-3 py-1.5 rounded-full font-semibold disabled:opacity-40 ${
                           t.photos.length >= CATEGORIES.length
@@ -182,6 +208,17 @@ export default function RoomsChecklist({ name }: { name: string }) {
                         }`}
                       >
                         사진{t.photos.length > 0 ? ` ${t.photos.length}` : ""}
+                      </button>
+                    </td>
+                    <td className="px-3 py-3">
+                      <button
+                        onClick={() => openModal(t.id, "notes", t.notes)}
+                        disabled={isCarried}
+                        className={`text-[12px] px-3 py-1.5 rounded-full font-semibold disabled:opacity-40 ${
+                          t.notes ? "bg-sage-tint text-sage" : "bg-[#ece2d0] text-ink"
+                        }`}
+                      >
+                        {t.notes ? "특이사항 O" : "특이사항"}
                       </button>
                     </td>
                   </tr>
@@ -231,74 +268,112 @@ export default function RoomsChecklist({ name }: { name: string }) {
             onClick={(e) => e.stopPropagation()}
             className="bg-card rounded-2xl w-full max-w-sm p-6 flex flex-col gap-4"
           >
-            <div className="text-[16px] font-bold">
-              {roomInfo(modalTask.rooms).number}호 청소 사진
+            <div className="text-[16px] font-bold">{roomInfo(modalTask.rooms).number}호</div>
+
+            <div className="flex gap-1.5 bg-bg rounded-lg p-1">
+              <button
+                onClick={() => setModalTab("photos")}
+                className={`flex-1 text-[12.5px] py-1.5 rounded-md font-semibold ${
+                  modalTab === "photos" ? "bg-card shadow-sm" : "text-muted"
+                }`}
+              >
+                사진
+              </button>
+              <button
+                onClick={() => setModalTab("notes")}
+                className={`flex-1 text-[12.5px] py-1.5 rounded-md font-semibold ${
+                  modalTab === "notes" ? "bg-card shadow-sm" : "text-muted"
+                }`}
+              >
+                특이사항
+              </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              {CATEGORIES.map((c) => {
-                const p = photoFor(modalTask.photos, c.key);
-                return (
-                  <div key={c.key} className="flex flex-col gap-1.5">
-                    <span className="text-[11px] tracking-[0.1em] text-muted uppercase text-center">
-                      {c.label}
-                    </span>
-                    {p ? (
-                      <div className="relative aspect-square rounded-lg overflow-hidden bg-bg">
-                        {p.url && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={p.url}
-                            alt={`${c.label} 청소 사진`}
-                            className="w-full h-full object-cover"
-                          />
+            {modalTab === "photos" ? (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  {CATEGORIES.map((c) => {
+                    const p = photoFor(modalTask.photos, c.key);
+                    return (
+                      <div key={c.key} className="flex flex-col gap-1.5">
+                        <span className="text-[11px] tracking-[0.1em] text-muted uppercase text-center">
+                          {c.label}
+                        </span>
+                        {p ? (
+                          <div className="relative aspect-square rounded-lg overflow-hidden bg-bg">
+                            {p.url && (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={p.url}
+                                alt={`${c.label} 청소 사진`}
+                                className="w-full h-full object-cover"
+                              />
+                            )}
+                            <button
+                              onClick={() => deletePhoto(p.id)}
+                              className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-6 h-6 text-xs leading-none"
+                              aria-label={`${c.label} 사진 삭제`}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setCapturingCategory(c.key);
+                              fileInputRef.current?.click();
+                            }}
+                            disabled={uploading}
+                            className="aspect-square rounded-lg border border-dashed border-line flex items-center justify-center text-muted text-[13px] disabled:opacity-50"
+                          >
+                            {uploading && capturingCategory === c.key ? "업로드 중..." : "+ 촬영"}
+                          </button>
                         )}
-                        <button
-                          onClick={() => deletePhoto(p.id)}
-                          className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-6 h-6 text-xs leading-none"
-                          aria-label={`${c.label} 사진 삭제`}
-                        >
-                          ✕
-                        </button>
                       </div>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          setCapturingCategory(c.key);
-                          fileInputRef.current?.click();
-                        }}
-                        disabled={uploading}
-                        className="aspect-square rounded-lg border border-dashed border-line flex items-center justify-center text-muted text-[13px] disabled:opacity-50"
-                      >
-                        {uploading && capturingCategory === c.key ? "업로드 중..." : "+ 촬영"}
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })}
+                </div>
 
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file && modalTaskId && capturingCategory) {
-                  uploadPhoto(modalTaskId, capturingCategory, file);
-                }
-                e.target.value = "";
-              }}
-            />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file && modalTaskId && capturingCategory) {
+                      uploadPhoto(modalTaskId, capturingCategory, file);
+                    }
+                    e.target.value = "";
+                  }}
+                />
 
-            <button
-              onClick={() => finishPhotoModal(modalTask.id)}
-              className="bg-accent text-bg rounded-[10px] py-3 font-semibold text-[14px]"
-            >
-              사진 촬영 완료
-            </button>
+                <button
+                  onClick={() => finishPhotoModal(modalTask.id)}
+                  className="bg-accent text-bg rounded-[10px] py-3 font-semibold text-[14px]"
+                >
+                  사진 촬영 완료
+                </button>
+              </>
+            ) : (
+              <>
+                <textarea
+                  value={notesDraft}
+                  onChange={(e) => setNotesDraft(e.target.value)}
+                  placeholder="예: 에어컨 고장, 손님 분실물 등"
+                  rows={5}
+                  className="w-full border border-line rounded-lg px-3 py-2.5 text-[13.5px] bg-bg resize-none"
+                />
+                <button
+                  onClick={() => saveNotes(modalTask.id)}
+                  disabled={savingNotes}
+                  className="bg-accent text-bg rounded-[10px] py-3 font-semibold text-[14px] disabled:opacity-50"
+                >
+                  {savingNotes ? "저장 중..." : "저장"}
+                </button>
+              </>
+            )}
 
             {modalTask.status === "todo" && (
               <button

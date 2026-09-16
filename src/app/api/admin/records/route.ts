@@ -9,6 +9,7 @@ type TaskRow = {
   status: string;
   source: string;
   completed_at: string | null;
+  notes: string | null;
   room_id: string;
   rooms: { number: string; type_name: string } | { number: string; type_name: string }[] | null;
   staff: { name: string } | { name: string }[] | null;
@@ -33,7 +34,7 @@ export async function GET(request: Request) {
   let query = supabaseAdmin
     .from("room_tasks")
     .select(
-      "id, work_date, staff_id, status, source, completed_at, room_id, rooms(number, type_name), staff(name)"
+      "id, work_date, staff_id, status, source, completed_at, notes, room_id, rooms(number, type_name), staff(name)"
     )
     .eq("status", "done")
     .gte("work_date", from)
@@ -129,6 +130,7 @@ export async function GET(request: Request) {
         source: r.source,
         completedAt: r.completed_at,
         durationMinutes: durationMinutesByTaskId.get(r.id) ?? null,
+        notes: r.notes,
         photos: photoList,
       };
     })

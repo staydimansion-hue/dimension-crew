@@ -15,7 +15,7 @@ export async function GET() {
   const { data: myTasksRaw, error: myTasksError } = await supabaseAdmin
     .from("room_tasks")
     .select(
-      "id, status, completed_at, source, rooms(number, type_name), task_photos(id, storage_path, category)"
+      "id, status, completed_at, source, notes, rooms(number, type_name), task_photos(id, storage_path, category)"
     )
     .eq("work_date", today)
     .eq("staff_id", session.staffId)
@@ -40,6 +40,7 @@ export async function GET() {
         status: t.status,
         completed_at: t.completed_at,
         source: t.source,
+        notes: t.notes,
         rooms: t.rooms,
         photos,
       };
