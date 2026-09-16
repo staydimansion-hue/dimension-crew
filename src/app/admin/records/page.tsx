@@ -54,6 +54,11 @@ export default function AdminRecordsPage() {
   const [summary, setSummary] = useState<Summary[]>([]);
   const [loading, setLoading] = useState(true);
   const [lightbox, setLightbox] = useState<string | null>(null);
+  const [notesModal, setNotesModal] = useState<{
+    roomNumber: string;
+    workDate: string;
+    text: string;
+  } | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/staff")
@@ -205,8 +210,23 @@ export default function AdminRecordsPage() {
                         <span className="text-muted">-</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 whitespace-normal max-w-[220px]">
-                      {r.notes ? r.notes : <span className="text-muted">-</span>}
+                    <td className="px-4 py-3">
+                      {r.notes ? (
+                        <button
+                          onClick={() =>
+                            setNotesModal({
+                              roomNumber: r.roomNumber,
+                              workDate: r.workDate,
+                              text: r.notes as string,
+                            })
+                          }
+                          className="text-accent underline"
+                        >
+                          보기
+                        </button>
+                      ) : (
+                        <span className="text-muted">-</span>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -227,6 +247,30 @@ export default function AdminRecordsPage() {
             alt="청소 완료 사진"
             className="max-w-full max-h-full rounded-xl"
           />
+        </div>
+      )}
+
+      {notesModal && (
+        <div
+          onClick={() => setNotesModal(null)}
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-card rounded-2xl w-full max-w-sm p-6 flex flex-col gap-4"
+          >
+            <div>
+              <div className="text-[15px] font-bold">{notesModal.roomNumber}호 특이사항</div>
+              <div className="text-[11.5px] text-muted mt-0.5">{notesModal.workDate}</div>
+            </div>
+            <div className="text-[13.5px] whitespace-pre-wrap">{notesModal.text}</div>
+            <button
+              onClick={() => setNotesModal(null)}
+              className="bg-ink text-bg rounded-[10px] py-2.5 font-semibold text-[13px]"
+            >
+              닫기
+            </button>
+          </div>
         </div>
       )}
     </div>

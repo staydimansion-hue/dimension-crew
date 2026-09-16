@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getStaffSession } from "@/lib/staffSession";
+import { postSlackMessage } from "@/lib/slack";
 
 export async function POST(request: Request) {
   const session = await getStaffSession();
@@ -18,7 +19,7 @@ export async function POST(request: Request) {
 
   const { data: task, error: taskError } = await supabaseAdmin
     .from("room_tasks")
-    .select("id, staff_id")
+    .select("id, staff_id, notes, rooms(number)")
     .eq("id", roomTaskId)
     .maybeSingle();
 
@@ -36,6 +37,16 @@ export async function POST(request: Request) {
 
   if (updateError) {
     return NextResponse.json({ error: updateError.message }, { status: 500 });
+  }
+
+  // 새로 작성되거나 내용이 바뀐 특이사항만 슬랙으로 공유 (빈 값으로 지운 경우는 알리지 않음)
+  const channel = process.env.SLACK_ROOM_CHANNEL_ID;
+  if (channel && notes && notes !== task.notes) {
+    const room = Array.isArray(task.rooms) ? task.rooms[0] : task.rooms;
+    postSlackMessage({
+      channel,
+      text: `📝 ${room?.number ?? "?"}호 특이사항 (${session.name})\n${notes}`,
+    }).catch((err) => console.error("슬랙 특이사항 알림 실패:", err));
   }
 
   return NextResponse.json({ ok: true });
