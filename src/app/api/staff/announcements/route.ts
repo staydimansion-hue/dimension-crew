@@ -12,7 +12,7 @@ export async function GET() {
     .from("announcements")
     .select("id, message, created_at")
     .order("created_at", { ascending: false })
-    .limit(10);
+    .limit(3);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
