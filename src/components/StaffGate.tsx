@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import BrandKicker from "./BrandKicker";
 import PasswordField from "./PasswordField";
 import StaffNav from "./StaffNav";
+import AnnouncementBoard from "./AnnouncementBoard";
 
 type Props = {
   children: (name: string, refreshNavStatus: () => void) => ReactNode;
@@ -133,7 +134,12 @@ export default function StaffGate({
           </div>
         )}
 
-        {phase === "ready" && children(name, refreshNavStatus)}
+        {phase === "ready" && (
+          <>
+            <AnnouncementBoard />
+            {children(name, refreshNavStatus)}
+          </>
+        )}
       </div>
       {phase === "login" && (
         <p className="mt-7 text-xs text-muted text-center leading-relaxed">
