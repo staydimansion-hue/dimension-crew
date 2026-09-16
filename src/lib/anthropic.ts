@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { ChecklistItem, SlackMessage } from "@/lib/slack";
 import { buildChecklistMessage } from "@/lib/slack";
+import { kstDateString } from "@/lib/kst";
 
 // claude-api 스킬 기준 기본 모델 (사용자가 다른 모델을 지정하지 않는 한 이 값을 사용)
 const MODEL_ID = "claude-opus-5";
@@ -22,6 +23,20 @@ const CAPABILITY_GUIDE =
 
 function client(): Anthropic {
   return new Anthropic();
+}
+
+// Claude에게 "오늘"/"내일" 등 날짜 표현의 기준을 명시적으로 알려준다. 이걸 안
+// 주면 체크리스트 마감일 등을 보고 스스로 날짜를 추측하다가 하루씩 밀리는
+// 오류가 난다 (예: 실제로 9/16인데 "내일(9/16)"이라고 잘못 표기).
+function dateGuide(): string {
+  const now = new Date();
+  const today = kstDateString(now);
+  const tomorrow = kstDateString(new Date(now.getTime() + 24 * 60 * 60 * 1000));
+  const weekday = new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    weekday: "short",
+  }).format(now);
+  return `오늘 실제 날짜는 ${today}(${weekday})입니다. "내일"은 반드시 ${tomorrow}를 가리켜야 합니다. 체크리스트 항목의 마감일(due_date)과 헷갈리지 말고, 메시지에서 "오늘"/"내일"/요일 같은 날짜 표현을 쓸 때는 이 실제 날짜를 기준으로 정확히 계산하세요.`;
 }
 
 function checklistText(items: ChecklistItem[]): string {
@@ -87,6 +102,8 @@ export async function buildDailyPlan(
   }
 
   const prompt = `당신은 "스테이디멘션" 숙박시설 운영팀의 프로젝트 매니저(PM)입니다. 매일 아침 운영방에 오늘 할 일을 안내합니다.
+
+${dateGuide()}
 
 ## 현재 체크리스트
 ${checklistText(items)}
@@ -165,6 +182,8 @@ export async function interpretPlanReply(
   }
 
   const prompt = `당신은 "스테이디멘션" 숙박시설 운영팀의 프로젝트 매니저(PM)입니다. 오늘 아침 아래 계획을 운영방에 보냈고, 매니저가 답장을 남겼습니다.
+
+${dateGuide()}
 
 ## 오늘 보낸 계획
 ${planMessage}
