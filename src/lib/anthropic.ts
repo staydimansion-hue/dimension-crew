@@ -125,6 +125,7 @@ ${CAPABILITY_GUIDE}`;
     model: MODEL_ID,
     max_tokens: 4096,
     thinking: { type: "adaptive" },
+    output_config: { effort: "low" },
     messages: [{ role: "user", content: prompt }],
   });
 
@@ -208,6 +209,7 @@ ${CAPABILITY_GUIDE}`;
     model: MODEL_ID,
     max_tokens: 4096,
     thinking: { type: "adaptive" },
+    output_config: { effort: "low" },
     messages: [{ role: "user", content: prompt }],
   });
 
