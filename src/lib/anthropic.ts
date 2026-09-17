@@ -36,7 +36,13 @@ function dateGuide(): string {
     timeZone: "Asia/Seoul",
     weekday: "short",
   }).format(now);
-  return `오늘 실제 날짜는 ${today}(${weekday})입니다. "내일"은 반드시 ${tomorrow}를 가리켜야 합니다. 체크리스트 항목의 마감일(due_date)과 헷갈리지 말고, 메시지에서 "오늘"/"내일"/요일 같은 날짜 표현을 쓸 때는 이 실제 날짜를 기준으로 정확히 계산하세요.`;
+  const time = new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(now);
+  return `오늘 실제 날짜는 ${today}(${weekday}), 지금 시각은 ${time}(한국시간)입니다. "내일"은 반드시 ${tomorrow}를 가리켜야 합니다. 체크리스트 항목의 마감일(due_date)과 헷갈리지 말고, 메시지에서 "오늘"/"내일"/요일 같은 날짜 표현을 쓸 때는 이 실제 날짜를 기준으로 정확히 계산하세요. 인사말이나 톤은 지금 시각에 맞게 자연스럽게 쓰세요(예: 아침 시간대면 "오늘 할 일", 저녁 시간대면 "오늘 하루 마무리하며 계획이 여전히 맞는지" 같은 식) — "아침"이라고 무조건 고정해서 말하지 마세요.`;
 }
 
 function checklistText(items: ChecklistItem[]): string {
@@ -101,7 +107,7 @@ export async function buildDailyPlan(
     throw new Error("ANTHROPIC_API_KEY 환경변수가 설정되지 않았습니다.");
   }
 
-  const prompt = `당신은 "스테이디멘션" 숙박시설 운영팀의 프로젝트 매니저(PM)입니다. 매일 아침 운영방에 오늘 할 일을 안내합니다.
+  const prompt = `당신은 "스테이디멘션" 숙박시설 운영팀의 프로젝트 매니저(PM)입니다. 하루에 정해진 시각마다(아침, 저녁 등) 운영방에 오늘 할 일 현황을 안내합니다.
 
 ${dateGuide()}
 
