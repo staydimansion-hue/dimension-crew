@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import RoomManualFab from "./RoomManualFab";
 
 type Category = "room" | "bathroom";
 
@@ -146,6 +147,7 @@ export default function RoomsChecklist({ name }: { name: string }) {
 
   return (
     <div className="w-full">
+      <RoomManualFab />
       <h2 className="text-[15px] font-bold text-center mb-4">{name}님 오늘의 청소</h2>
 
       {myTasks.length === 0 ? (
