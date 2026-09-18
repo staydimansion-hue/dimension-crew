@@ -140,6 +140,14 @@ export async function GET(request: Request) {
     result = result.filter((r) => r.roomNumber === roomNumber);
   }
 
+  // 소요시간 계산은 직원+날짜 순으로 해야 하지만, 화면에는 최신순으로 보여준다
+  result.sort((a, b) => {
+    if (a.workDate !== b.workDate) return a.workDate < b.workDate ? 1 : -1;
+    const aTime = a.completedAt ?? "";
+    const bTime = b.completedAt ?? "";
+    return aTime < bTime ? 1 : aTime > bTime ? -1 : 0;
+  });
+
   // 월별(조회기간) 알바별 요약
   const summaryMap = new Map<
     string,

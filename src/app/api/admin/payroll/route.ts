@@ -31,7 +31,8 @@ export async function GET(request: Request) {
     .gte("work_date", from)
     .lte("work_date", to)
     .not("clock_out_at", "is", null)
-    .order("work_date", { ascending: true });
+    .order("work_date", { ascending: false })
+    .order("clock_in_at", { ascending: false });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
