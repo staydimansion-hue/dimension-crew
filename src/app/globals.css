@@ -79,3 +79,15 @@ select {
   background-position: right 0.65rem center;
   background-size: 12px;
 }
+
+@keyframes fab-icon-bump {
+  0% {
+    transform: translateY(0);
+  }
+  35% {
+    transform: translateY(-5px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}

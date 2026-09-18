@@ -152,6 +152,7 @@ function ManualIcon() {
 export default function RoomManualFab() {
   const [open, setOpen] = useState(false);
   const [activeManual, setActiveManual] = useState<RoomManual | null>(null);
+  const [bumpKey, setBumpKey] = useState(0);
 
   return (
     <>
@@ -176,12 +177,16 @@ export default function RoomManualFab() {
         ))}
 
         <button
-          onClick={() => setOpen((v) => !v)}
+          onClick={() => {
+            setOpen((v) => !v);
+            setBumpKey((k) => k + 1);
+          }}
           aria-label="청소 매뉴얼"
-          className="w-14 h-14 rounded-full bg-accent text-bg shadow-lg flex items-center justify-center transition-transform duration-300"
-          style={{ transform: open ? "rotate(90deg)" : "rotate(0deg)" }}
+          className="w-14 h-14 rounded-full bg-accent text-bg shadow-lg flex items-center justify-center"
         >
-          <ManualIcon />
+          <span key={bumpKey} className="inline-flex animate-[fab-icon-bump_0.4s_ease-out]">
+            <ManualIcon />
+          </span>
         </button>
       </div>
 
