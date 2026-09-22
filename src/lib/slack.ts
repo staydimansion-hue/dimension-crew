@@ -65,6 +65,18 @@ export interface ChecklistItem {
   status: ChecklistStatus;
   due_date: string | null;
   sort_order: number;
+  completed_at?: string | null;
+}
+
+// 완료(done) 항목은 완료된 다음날 저녁까지만 보여주고, 그 이후엔 브리핑에서
+// 뺍니다(계속 쌓이면 매번 다 보여서 지저분해짐). due_date와 헷갈리지 않도록
+// completed_at(완료 처리 시각) 기준으로 판단합니다.
+function isRecentlyCompleted(item: ChecklistItem, today: string): boolean {
+  if (item.status !== "done") return true;
+  if (!item.completed_at) return true; // 완료 시각 정보가 없으면 일단 보여줌
+  // 완료 당일 + 다음날까지(cutoffDate)는 보여주고, 그 이후 날짜면 숨김
+  const cutoffDate = kstDateString(new Date(new Date(item.completed_at).getTime() + 24 * 60 * 60 * 1000));
+  return today <= cutoffDate;
 }
 
 // 상태별 색상 이모지 (요청 사양 그대로)
@@ -129,11 +141,14 @@ export async function fetchChannelHistory(limit = 50): Promise<SlackMessage[]> {
     }));
 }
 
-/** 활성화된 체크리스트 항목을 정렬 순서대로 가져옵니다. */
+/**
+ * 활성화된 체크리스트 항목을 정렬 순서대로 가져옵니다.
+ * 완료(done) 항목은 완료된 다음날 저녁까지만 포함하고, 그 이후엔 제외합니다.
+ */
 export async function fetchChecklistItems(): Promise<ChecklistItem[]> {
   const { data, error } = await supabaseAdmin
     .from("checklist_items")
-    .select("id, title, status, due_date, sort_order")
+    .select("id, title, status, due_date, sort_order, completed_at")
     .eq("is_active", true)
     .order("sort_order", { ascending: true });
 
@@ -141,7 +156,8 @@ export async function fetchChecklistItems(): Promise<ChecklistItem[]> {
     throw new Error(`체크리스트 조회 실패: ${error.message}`);
   }
 
-  return (data ?? []) as ChecklistItem[];
+  const today = kstDateString();
+  return ((data ?? []) as ChecklistItem[]).filter((item) => isRecentlyCompleted(item, today));
 }
 
 /**

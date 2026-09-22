@@ -91,7 +91,7 @@ npm run dev
 
 ⚠️ **모델**: 비용 절감을 위해 `claude-sonnet-5`를 사용합니다(2026-09-22부터, 원래 `claude-opus-5`였으나 자동 호출만으로 Anthropic 크레딧 $5가 약 7일 만에 소진돼 변경). 품질이 부족하면 `src/lib/anthropic.ts`의 `MODEL_ID`를 다시 올릴 수 있습니다.
 
-1. 1번에서 `checklist_items.sql` / `checklist_items_seed.sql` / `checklist_daily_plan.sql`을 이미 실행했는지 확인
+1. 1번에서 `checklist_items.sql` / `checklist_items_seed.sql` / `checklist_daily_plan.sql` / `checklist_items_completed_at.sql`을 이 순서로 실행했는지 확인 (마지막 파일: 완료 항목이 다음날 저녁까지만 브리핑에 보이고 그 이후엔 자동으로 빠지게 하는 트리거)
 2. Slack App(7번에서 만든 것과 동일한 앱 가능) → **OAuth & Permissions**에서 Bot Token Scopes에 `chat:write`, `channels:history`(또는 `groups:history`), **`app_mentions:read`** 추가 → 재설치 후 Bot User OAuth Token이 `SLACK_BOT_TOKEN`과 같은지 확인
 3. 봇을 운영방 채널에 초대하고, 채널 ID 확인 → Railway `SLACK_OPERATIONS_CHANNEL_ID`에 등록
 4. **슬랙 앱 → Event Subscriptions** 켜기 → Request URL에 `https://<배포주소>/api/slack/events` 입력 (배포 후에만 검증 통과) → **Subscribe to bot events**에 `message.channels`(운영방이 공개 채널) 또는 `message.groups`(비공개 채널), 그리고 **`app_mention`**을 추가 → 저장 후 재설치
