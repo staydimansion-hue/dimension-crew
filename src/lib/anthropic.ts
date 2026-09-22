@@ -3,8 +3,10 @@ import type { ChecklistItem, SlackMessage } from "@/lib/slack";
 import { buildChecklistMessage } from "@/lib/slack";
 import { kstDateString } from "@/lib/kst";
 
-// claude-api 스킬 기준 기본 모델 (사용자가 다른 모델을 지정하지 않는 한 이 값을 사용)
-const MODEL_ID = "claude-opus-5";
+// 체크리스트 요약/판단은 복잡한 추론이 필요 없는 작업이라, 비용 절감을 위해
+// claude-opus-5 대신 claude-sonnet-5를 사용한다 (2026-09-22, 매니저 요청 —
+// opus 기준 하루 2회 자동 호출만으로 Anthropic 크레딧 $5가 약 7일 만에 소진됨).
+const MODEL_ID = "claude-sonnet-5";
 
 export const CONFIRM_QUESTION =
   "이 계획대로 진행할까요? 다른 의견 있으면 이 채널에 답장해주세요.";
@@ -145,6 +147,78 @@ ${CAPABILITY_GUIDE}`;
     return `${text}\n\n${CONFIRM_QUESTION}`;
   }
   return text;
+}
+
+/**
+ * 저녁에 운영방에 보낼 "하루 마무리 리포트" 메시지를 만듭니다. (규칙 기반 스텁)
+ * ANTHROPIC_API_KEY 없이도 결과 형태를 보여주기 위한 결정적 스텁입니다.
+ */
+export function buildStubEveningReport(
+  items: ChecklistItem[],
+  messages: SlackMessage[]
+): string {
+  const lines: string[] = [];
+  lines.push(":memo: *오늘 하루 마무리 리포트 (샘플/스텁)*");
+  lines.push("");
+  lines.push(buildChecklistMessage(items));
+  lines.push("");
+  lines.push(":speech_balloon: *오늘 나눈 대화*");
+  for (const m of [...messages].reverse()) {
+    lines.push(`• ${m.text}`);
+  }
+  lines.push("");
+  lines.push("오늘도 고생 많으셨습니다. 내일 아침에 다시 안내드릴게요.");
+  return lines.join("\n");
+}
+
+/**
+ * 체크리스트 + 오늘 하루 운영방 대화를 바탕으로 저녁 마무리 리포트를 생성합니다.
+ * 아침 브리핑과 달리 확인을 요청하지 않고, 있었던 내용을 그대로 보고만 합니다
+ * (매니저 요청: 저녁엔 답장을 기다리지 않고 읽은 내용을 정리해서 보고하고 그대로 진행).
+ * ANTHROPIC_API_KEY 환경변수가 필요합니다. 실제 체크리스트 상태를 자동으로 바꾸지는 않습니다.
+ */
+export async function buildEveningReport(
+  items: ChecklistItem[],
+  messages: SlackMessage[]
+): Promise<string> {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    throw new Error("ANTHROPIC_API_KEY 환경변수가 설정되지 않았습니다.");
+  }
+
+  const prompt = `당신은 "스테이디멘션" 숙박시설 운영팀의 프로젝트 매니저(PM)입니다. 저녁마다 오늘 하루 운영방에서 있었던 대화와 체크리스트 현황을 정리해서 보고합니다.
+
+${dateGuide()}
+
+## 현재 체크리스트
+${checklistText(items)}
+
+## 오늘 나눈 대화
+${chatText(messages)}
+
+위 정보를 바탕으로 운영방에 보낼 한국어 저녁 마무리 리포트를 작성하세요. 다음을 포함합니다:
+1) 오늘 있었던 주요 내용/논의된 것 정리
+2) 체크리스트 진행 상황(완료/진행중/미진행) 요약
+3) 대화에서 파악된 변경사항이 있으면 "이렇게 반영해서 정리했습니다" 톤으로 보고 (실제 체크리스트 상태를 자동으로 바꾸지는 않습니다)
+
+**중요**: 이건 확인을 요청하는 메시지가 아니라 그냥 보고입니다. "${CONFIRM_QUESTION}" 같은 확인 질문을 절대 넣지 마세요. 답장을 기다리지 않고 그대로 진행되는 보고이므로, 질문 없이 보고 + 짧은 마무리 인사로 끝내세요.
+
+Slack 메시지로 바로 보낼 수 있도록, 마크다운 제목(#) 없이 이모지와 줄바꿈으로 읽기 쉽게 작성하세요. ${EMOJI_GUIDE}
+
+${CAPABILITY_GUIDE}`;
+
+  const response = await client().messages.create({
+    model: MODEL_ID,
+    max_tokens: 4096,
+    thinking: { type: "adaptive" },
+    output_config: { effort: "low" },
+    messages: [{ role: "user", content: prompt }],
+  });
+
+  return response.content
+    .filter((block): block is Anthropic.TextBlock => block.type === "text")
+    .map((block) => block.text)
+    .join("\n")
+    .trim();
 }
 
 export interface PlanReplyResult {
