@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import AdminNav from "@/components/AdminNav";
 
 type Photo = { category: string; url: string };
@@ -35,17 +35,21 @@ function toKstLocal(iso: string): string {
   return new Date(iso).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
 }
 
-function monthAgo(): string {
-  const d = new Date();
-  d.setMonth(d.getMonth() - 1);
-  return d.toISOString().slice(0, 10);
-}
 function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+// "9월 28일 (월)" 형태의 날짜 구분 헤더 문구를 만든다.
+function formatDateHeader(dateStr: string): string {
+  const d = new Date(`${dateStr}T00:00:00+09:00`);
+  const md = d.toLocaleDateString("ko-KR", { month: "long", day: "numeric", timeZone: "Asia/Seoul" });
+  const wd = d.toLocaleDateString("ko-KR", { weekday: "short", timeZone: "Asia/Seoul" });
+  return `${md} (${wd})`;
+}
+
 export default function AdminRecordsPage() {
-  const [from, setFrom] = useState(monthAgo());
+  // 페이지에 처음 들어오면 오늘자 기록만 보이고, 필요하면 기간을 넓혀서 볼 수 있다.
+  const [from, setFrom] = useState(today());
   const [to, setTo] = useState(today());
   const [staffId, setStaffId] = useState("");
   const [roomNumber, setRoomNumber] = useState("");
@@ -84,6 +88,18 @@ export default function AdminRecordsPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- 필터가 바뀔 때마다 다시 불러온다
     load();
   }, [load]);
+
+  // 기간이 하루보다 넓어지면 표가 한없이 길어지므로 날짜별로 나눠서 보여준다.
+  // rows는 이미 날짜 최신순으로 정렬돼 있어서 순서대로 묶기만 하면 된다.
+  const groups = useMemo(() => {
+    const map = new Map<string, RecordRow[]>();
+    for (const r of rows) {
+      const arr = map.get(r.workDate) ?? [];
+      arr.push(r);
+      map.set(r.workDate, arr);
+    }
+    return Array.from(map.entries());
+  }, [rows]);
 
   return (
     <div className="min-h-dvh bg-bg flex flex-col">
@@ -150,90 +166,95 @@ export default function AdminRecordsPage() {
           </div>
         )}
 
-        <div className="bg-card border border-line rounded-2xl overflow-x-auto">
-          <table className="w-full text-[13.5px] whitespace-nowrap">
-            <thead>
-              <tr className="text-left">
-                {["날짜", "객실", "타입", "담당자", "경로", "완료시각", "소요시간", "사진", "특이사항"].map(
-                  (h) => (
-                    <th
-                      key={h}
-                      className="px-4 py-3 text-[11px] tracking-[0.1em] text-muted uppercase font-semibold border-b border-line"
-                    >
-                      {h}
-                    </th>
-                  )
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={9} className="px-4 py-6 text-center text-muted">
-                    불러오는 중...
-                  </td>
-                </tr>
-              ) : rows.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="px-4 py-6 text-center text-muted">
-                    기록이 없습니다.
-                  </td>
-                </tr>
-              ) : (
-                rows.map((r) => (
-                  <tr key={r.id} className="border-b border-line last:border-0">
-                    <td className="px-4 py-3 text-muted">{r.workDate}</td>
-                    <td className="px-4 py-3 font-semibold">{r.roomNumber}</td>
-                    <td className="px-4 py-3 text-muted">{r.roomType}</td>
-                    <td className="px-4 py-3">{r.staffName}</td>
-                    <td className="px-4 py-3 text-muted">
-                      {r.source === "self_added" ? "알바 추가" : r.source === "slack" ? "슬랙" : "어드민"}
-                    </td>
-                    <td className="px-4 py-3">{r.completedAt ? toKstLocal(r.completedAt) : "-"}</td>
-                    <td className="px-4 py-3">
-                      {r.durationMinutes != null ? `${r.durationMinutes}분` : "-"}
-                    </td>
-                    <td className="px-4 py-3">
-                      {r.photos.length > 0 ? (
-                        <div className="flex gap-3">
-                          {r.photos.map((p) => (
-                            <button
-                              key={p.category}
-                              onClick={() => setLightbox(p.url)}
-                              className="text-accent underline"
+        {loading ? (
+          <div className="bg-card border border-line rounded-2xl px-4 py-6 text-center text-muted">
+            불러오는 중...
+          </div>
+        ) : groups.length === 0 ? (
+          <div className="bg-card border border-line rounded-2xl px-4 py-6 text-center text-muted">
+            기록이 없습니다.
+          </div>
+        ) : (
+          <div className="flex flex-col gap-6">
+            {groups.map(([workDate, dateRows]) => (
+              <div key={workDate}>
+                <div className="flex items-baseline gap-2 mb-2 px-1">
+                  <h2 className="text-[14px] font-bold">{formatDateHeader(workDate)}</h2>
+                  <span className="text-[12px] text-muted">{dateRows.length}건</span>
+                </div>
+                <div className="bg-card border border-line rounded-2xl overflow-x-auto">
+                  <table className="w-full text-[13.5px] whitespace-nowrap">
+                    <thead>
+                      <tr className="text-left">
+                        {["객실", "타입", "담당자", "경로", "완료시각", "소요시간", "사진", "특이사항"].map(
+                          (h) => (
+                            <th
+                              key={h}
+                              className="px-4 py-3 text-[11px] tracking-[0.1em] text-muted uppercase font-semibold border-b border-line"
                             >
-                              {categoryLabel(p.category)}
-                            </button>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-muted">-</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      {r.notes ? (
-                        <button
-                          onClick={() =>
-                            setNotesModal({
-                              roomNumber: r.roomNumber,
-                              workDate: r.workDate,
-                              text: r.notes as string,
-                            })
-                          }
-                          className="text-accent underline"
-                        >
-                          보기
-                        </button>
-                      ) : (
-                        <span className="text-muted">-</span>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                              {h}
+                            </th>
+                          )
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dateRows.map((r) => (
+                        <tr key={r.id} className="border-b border-line last:border-0">
+                          <td className="px-4 py-3 font-semibold">{r.roomNumber}</td>
+                          <td className="px-4 py-3 text-muted">{r.roomType}</td>
+                          <td className="px-4 py-3">{r.staffName}</td>
+                          <td className="px-4 py-3 text-muted">
+                            {r.source === "self_added" ? "알바 추가" : r.source === "slack" ? "슬랙" : "어드민"}
+                          </td>
+                          <td className="px-4 py-3">{r.completedAt ? toKstLocal(r.completedAt) : "-"}</td>
+                          <td className="px-4 py-3">
+                            {r.durationMinutes != null ? `${r.durationMinutes}분` : "-"}
+                          </td>
+                          <td className="px-4 py-3">
+                            {r.photos.length > 0 ? (
+                              <div className="flex gap-3">
+                                {r.photos.map((p) => (
+                                  <button
+                                    key={p.category}
+                                    onClick={() => setLightbox(p.url)}
+                                    className="text-accent underline"
+                                  >
+                                    {categoryLabel(p.category)}
+                                  </button>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-muted">-</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            {r.notes ? (
+                              <button
+                                onClick={() =>
+                                  setNotesModal({
+                                    roomNumber: r.roomNumber,
+                                    workDate: r.workDate,
+                                    text: r.notes as string,
+                                  })
+                                }
+                                className="text-accent underline"
+                              >
+                                보기
+                              </button>
+                            ) : (
+                              <span className="text-muted">-</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {lightbox && (
