@@ -3,9 +3,9 @@
  *
  * 실제 Slack / Supabase / (선택적으로) Anthropic 없이도 운영방 PM 봇이
  * 어떻게 동작하는지 그대로 렌더링해서 출력합니다.
- *   (a) 오늘 아침 PM 브리핑 [daily-checklist]
- *   (b) 매니저가 "아니야, 다른 게 먼저야"라고 답장했을 때의 재정리 [slack/events]
- *   (c) 매니저가 "응 좋아"라고 확정했을 때의 응답 [slack/events]
+ *   (a) 오늘 아침 PM 브리핑 — 확인 요청 없이 그대로 보고 [daily-checklist]
+ *   (b) 매니저가 봇을 @멘션하며 "아니야, 다른 게 먼저야"라고 남겼을 때의 재정리 [slack/events]
+ *   (c) 매니저가 봇을 @멘션하며 "고마워"처럼 별 의견 없이 남겼을 때의 응답 [slack/events]
  *   (d) 저녁 마무리 리포트 — 확인 요청 없이 그대로 보고 [daily-checklist?phase=evening]
  *
  * 실행: npm run simulate
@@ -41,7 +41,7 @@ async function main() {
     : buildStubDailyPlan(SAMPLE_CHECKLIST, SAMPLE_MESSAGES);
   console.log(plan);
 
-  divider('(b) 매니저 답장: "아니야, 에어컨보다 도배 마무리부터 확인해줘" [slack/events]');
+  divider('(b) 매니저 멘션: "@봇 아니야, 에어컨보다 도배 마무리부터 확인해줘" [slack/events]');
   const revised = await interpretPlanReply(
     plan,
     SAMPLE_CHECKLIST,
@@ -50,8 +50,8 @@ async function main() {
   console.log(`confirmed: ${revised.confirmed}`);
   console.log(revised.message);
 
-  divider('(c) 매니저 답장: "응 좋아 그대로 진행해줘" [slack/events]');
-  const confirmed = await interpretPlanReply(plan, SAMPLE_CHECKLIST, "응 좋아 그대로 진행해줘");
+  divider('(c) 매니저 멘션: "@봇 고마워" [slack/events]');
+  const confirmed = await interpretPlanReply(plan, SAMPLE_CHECKLIST, "고마워");
   console.log(`confirmed: ${confirmed.confirmed}`);
   console.log(confirmed.message);
 

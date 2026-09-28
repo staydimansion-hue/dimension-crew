@@ -79,30 +79,29 @@ npm run dev
 7. **cron-job.org**(무료) 가입 → 새 크론잡 생성 → URL에 `https://<배포주소>/api/cron/payroll-reminder?token=<6번에서 만든 값>` 입력 → 매일 1회(예: 오전 9시) 실행되게 설정
 8. **동작 확인**: 브라우저에서 위 URL을 직접 열어봐서 `{"skipped":true,"today":"...","reminderDate":"..."}` 같은 JSON이 뜨면 정상 작동 중인 것입니다(오늘이 알림일이 아니라 건너뛴 것). `{"error":"..."}`가 뜨면 메시지에 원인이 나오니 그에 맞게 환경변수를 다시 확인하세요.
 
-## 8. 운영방 PM 봇 (일일 체크리스트 + 대화형 확정)
+## 8. 운영방 PM 봇 (일일 체크리스트 + 멘션 재정리)
 
-`manage_emp` 저장소(PR #1, `claude/slack-session-84d5ql`)의 체크리스트 기능을 가져와, 운영방에서 실제로 답장을 주고받으며 계획을 재정리하는 방식으로 재구성했습니다. 위 7번과 같은 `SLACK_BOT_TOKEN`, `SLACK_SIGNING_SECRET`, `CRON_SECRET`을 공용으로 사용합니다.
+`manage_emp` 저장소(PR #1, `claude/slack-session-84d5ql`)의 체크리스트 기능을 가져와 재구성했습니다. 위 7번과 같은 `SLACK_BOT_TOKEN`, `SLACK_SIGNING_SECRET`, `CRON_SECRET`을 공용으로 사용합니다.
 
-**동작 방식**: 하루 두 번, 성격이 다른 메시지를 보냅니다.
-- **아침(`?phase=morning`, 기본값)**: 체크리스트 + 최근 대화를 바탕으로 "오늘 할 일" 브리핑을 올리고 **확정 여부를 묻습니다.** 매니저가 그 채널에 답장하면(버튼이 아니라 그냥 메시지로) Slack이 실시간으로 그 메시지를 우리 서버에 보내고, Claude가 "확정"인지 "다른 의견"인지 판단해서 확정이면 짧게 답하고, 다른 의견이면 그걸 반영해 계획을 다시 정리해서 재차 물어봅니다.
-- **저녁(`?phase=evening`)**: 그날 하루 나눈 대화 + 체크리스트 현황을 읽고 **보고만 합니다 — 확인을 요청하지 않고 그대로 진행됩니다.** 답장을 기다리지 않으므로 곧바로 `confirmed` 상태로 저장됩니다.
+**동작 방식** [2026-09-28 변경]: 하루 두 번(아침 `?phase=morning`(기본값), 저녁 `?phase=evening`) 체크리스트 + 그날 대화를 정리해서 운영방에 **보고만 합니다 — 둘 다 "이대로 진행할까요?" 같은 확인 질문을 넣지 않고, 답장을 기다리지 않습니다.** (매니저 피드백: 계속 확인 질문을 물어봐서 번거로웠음 — 아침도 저녁처럼 그냥 정리해서 보여주는 방식으로 통일.) 게시 즉시 `confirmed` 상태로 저장됩니다.
 
-**확정된 뒤에는**(아침 확정 후, 또는 저녁 리포트 이후) 일반 메시지에는 반응하지 않지만(잡담에 매번 반응하면 시끄러움), **봇을 `@멘션`하면** 그 의견을 반영해 계획을 다시 열어 재정리합니다. 실제 체크리스트 상태(`checklist_items`)는 자동으로 바뀌지 않고, 항목 추가/상태 변경은 여전히 Supabase에서 직접 합니다 — 이 봇은 "오늘 뭘 할지 대화로 정리해서 공유"하는 역할만 합니다.
+**재수정하고 싶으면 언제든 봇을 `@멘션`**하세요 — 그 의견을 반영해서 다시 정리해 보고합니다(역시 확인 질문 없이 반영 결과만 보고). 일반 메시지(멘션 없이 그냥 채팅)에는 전혀 반응하지 않습니다 — 잡담에 매번 끼어들지 않기 위함이고, 대신 그 대화 내용은 다음 아침/저녁 보고 때 자동으로 반영됩니다. 실제 체크리스트 상태(`checklist_items`)는 자동으로 바뀌지 않고, 항목 추가/상태 변경은 여전히 Supabase에서 직접 합니다 — 이 봇은 "오늘 뭘 할지 정리해서 공유"하는 역할만 합니다.
 
 ⚠️ **모델**: 비용 절감을 위해 `claude-sonnet-5`를 사용합니다(2026-09-22부터, 원래 `claude-opus-5`였으나 자동 호출만으로 Anthropic 크레딧 $5가 약 7일 만에 소진돼 변경). 품질이 부족하면 `src/lib/anthropic.ts`의 `MODEL_ID`를 다시 올릴 수 있습니다.
 
 1. 1번에서 `checklist_items.sql` / `checklist_items_seed.sql` / `checklist_daily_plan.sql` / `checklist_items_completed_at.sql`을 이 순서로 실행했는지 확인 (마지막 파일: 완료 항목이 다음날 저녁까지만 브리핑에 보이고 그 이후엔 자동으로 빠지게 하는 트리거)
-2. Slack App(7번에서 만든 것과 동일한 앱 가능) → **OAuth & Permissions**에서 Bot Token Scopes에 `chat:write`, `channels:history`(또는 `groups:history`), **`app_mentions:read`** 추가 → 재설치 후 Bot User OAuth Token이 `SLACK_BOT_TOKEN`과 같은지 확인
+2. Slack App(7번에서 만든 것과 동일한 앱 가능) → **OAuth & Permissions**에서 Bot Token Scopes에 `chat:write`, `channels:history`(또는 `groups:history` — 대화를 읽어오는 데 필요), **`app_mentions:read`** 추가 → 재설치 후 Bot User OAuth Token이 `SLACK_BOT_TOKEN`과 같은지 확인
 3. 봇을 운영방 채널에 초대하고, 채널 ID 확인 → Railway `SLACK_OPERATIONS_CHANNEL_ID`에 등록
-4. **슬랙 앱 → Event Subscriptions** 켜기 → Request URL에 `https://<배포주소>/api/slack/events` 입력 (배포 후에만 검증 통과) → **Subscribe to bot events**에 `message.channels`(운영방이 공개 채널) 또는 `message.groups`(비공개 채널), 그리고 **`app_mention`**을 추가 → 저장 후 재설치
+4. **슬랙 앱 → Event Subscriptions** 켜기 → Request URL에 `https://<배포주소>/api/slack/events` 입력 (배포 후에만 검증 통과) → **Subscribe to bot events**에 **`app_mention`만** 추가 → 저장 후 재설치
+   - `message.channels`/`message.groups`는 이제 구독할 필요 없습니다(일반 메시지에는 더 이상 반응하지 않음) — 이미 추가해뒀다면 그대로 둬도 무방하고, 정리하고 싶으면 지워도 됩니다.
    - ⚠️ 7번에서 이미 **Signing Secret**을 등록했다면 그대로 재사용됩니다. 아직이면 **Basic Information → Signing Secret**을 복사해 Railway `SLACK_SIGNING_SECRET`에 등록하세요.
    - ⚠️ Interactivity와 마찬가지로 **Socket Mode**가 켜져 있으면 Request URL 입력란이 안 보입니다.
-5. Claude API 키 발급(https://console.anthropic.com) → Railway `ANTHROPIC_API_KEY`에 등록 (없으면 브리핑은 스텁 메시지로 대체되고, 답장에 대한 "재정리"는 동작하지 않습니다 — 확정 키워드 감지만 됨)
-6. 드라이런 확인: `npm run simulate` (로컬, 아침/답장/저녁까지 전부 시뮬레이션) 또는 배포 후 `/api/cron/daily-checklist?dryRun=1`(아침), `/api/cron/daily-checklist?dryRun=1&phase=evening`(저녁) — 둘 다 실제 발송/저장 없음
+5. Claude API 키 발급(https://console.anthropic.com) → Railway `ANTHROPIC_API_KEY`에 등록 (없으면 브리핑은 스텁 메시지로 대체되고, 멘션에 대한 "재정리"는 동작하지 않습니다 — 확인/감사 키워드 감지만 됨)
+6. 드라이런 확인: `npm run simulate` (로컬, 아침/멘션/저녁까지 전부 시뮬레이션) 또는 배포 후 `/api/cron/daily-checklist?dryRun=1`(아침), `/api/cron/daily-checklist?dryRun=1&phase=evening`(저녁) — 둘 다 실제 발송/저장 없음
 7. **cron-job.org** 등 외부 스케줄러에 **아침용/저녁용 2개**를 등록
    - 아침(예: 08:30): `https://<배포주소>/api/cron/daily-checklist?token=<CRON_SECRET>`
    - 저녁(예: 19:00): `https://<배포주소>/api/cron/daily-checklist?token=<CRON_SECRET>&phase=evening`
-8. **동작 확인**: 아침 URL을 직접 열어 브리핑이 올라오는지 확인 → "네 좋아요" 또는 "아니 이거 먼저 해줘" 같은 답장으로 확정/재정리 확인 → 확정 후 `@봇이름 다시 이거 반영해줘`처럼 멘션해서 재정리 확인 → 저녁 URL도 열어서 확인 질문 없이 보고만 오는지 확인
+8. **동작 확인**: 아침 URL을 직접 열어 브리핑이 올라오는지, 확인 질문 없이 끝나는지 확인 → `@봇이름 다시 이거 반영해줘`처럼 멘션해서 재정리되는지 확인 → 저녁 URL도 열어서 확인해보기
 
 ⚠️ `/admin/checklist` 어드민 페이지는 아직 없습니다(체크리스트 항목은 Supabase에서 직접 관리).
 

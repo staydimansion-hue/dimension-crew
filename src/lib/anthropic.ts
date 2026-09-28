@@ -8,9 +8,6 @@ import { kstDateString } from "@/lib/kst";
 // opus 기준 하루 2회 자동 호출만으로 Anthropic 크레딧 $5가 약 7일 만에 소진됨).
 const MODEL_ID = "claude-sonnet-5";
 
-export const CONFIRM_QUESTION =
-  "이 계획대로 진행할까요? 다른 의견 있으면 이 채널에 답장해주세요.";
-
 // Claude가 슬랙에 실제로 없는 이모지 shortcode(예: :pause_button:)를 지어내
 // 텍스트 그대로 노출되는 걸 막기 위해, 확실히 존재하는 것만 예시로 제한한다.
 const EMOJI_GUIDE =
@@ -93,12 +90,14 @@ export function buildStubDailyPlan(
     lines.push(`• ${m.text}`);
   }
   lines.push("");
-  lines.push(CONFIRM_QUESTION);
+  lines.push("오늘도 화이팅입니다!");
   return lines.join("\n");
 }
 
 /**
  * 체크리스트 + 최근 운영방 대화를 바탕으로 오늘 아침 PM 브리핑 메시지를 생성합니다.
+ * 저녁 리포트와 마찬가지로 확인을 요청하지 않고 정리해서 보고만 합니다 — 매니저가
+ * 재수정을 원하면 언제든 봇을 @멘션하면 됩니다.
  * ANTHROPIC_API_KEY 환경변수가 필요합니다. 실제 체크리스트 상태를 자동으로 바꾸지는 않습니다.
  */
 export async function buildDailyPlan(
@@ -122,8 +121,9 @@ ${chatText(messages)}
 위 정보를 바탕으로 운영방에 보낼 한국어 아침 브리핑 메시지를 작성하세요. 다음을 포함합니다:
 1) 오늘 해야 할 일: 마감이 임박했거나 지난 항목, 진행중인 항목을 우선순위대로 정리
 2) 다음 일정: 오늘 당장은 아니지만 곧 다가오는 항목
-3) 대화에서 새로 언급된 할 일이나 일정 변경이 있으면 반영해서 "이렇게 추가/반영할까요?" 형태로 제안 (체크리스트 상태를 실제로 바꾸지는 않습니다 — 제안만 합니다)
-4) 마지막 줄에는 반드시 다음 질문을 그대로 넣습니다: "${CONFIRM_QUESTION}"
+3) 대화에서 새로 언급된 할 일이나 일정 변경이 있으면 "이렇게 반영해서 정리했습니다" 톤으로 보고 (실제 체크리스트 상태를 자동으로 바꾸지는 않습니다)
+
+**중요**: 이건 확인을 요청하는 메시지가 아니라 그냥 보고입니다. "이대로 진행할까요?" 같은 확인 질문을 절대 넣지 마세요. 답장을 기다리지 않고 그대로 진행되는 보고이므로, 질문 없이 보고 + 짧은 마무리 인사로 끝내세요. (재수정이 필요하면 매니저가 봇을 @멘션해서 알려줄 것입니다.)
 
 Slack 메시지로 바로 보낼 수 있도록, 마크다운 제목(#) 없이 이모지와 줄바꿈으로 읽기 쉽게 작성하세요. ${EMOJI_GUIDE}
 
@@ -137,16 +137,11 @@ ${CAPABILITY_GUIDE}`;
     messages: [{ role: "user", content: prompt }],
   });
 
-  const text = response.content
+  return response.content
     .filter((block): block is Anthropic.TextBlock => block.type === "text")
     .map((block) => block.text)
     .join("\n")
     .trim();
-
-  if (!text.includes(CONFIRM_QUESTION)) {
-    return `${text}\n\n${CONFIRM_QUESTION}`;
-  }
-  return text;
 }
 
 /**
@@ -200,7 +195,7 @@ ${chatText(messages)}
 2) 체크리스트 진행 상황(완료/진행중/미진행) 요약
 3) 대화에서 파악된 변경사항이 있으면 "이렇게 반영해서 정리했습니다" 톤으로 보고 (실제 체크리스트 상태를 자동으로 바꾸지는 않습니다)
 
-**중요**: 이건 확인을 요청하는 메시지가 아니라 그냥 보고입니다. "${CONFIRM_QUESTION}" 같은 확인 질문을 절대 넣지 마세요. 답장을 기다리지 않고 그대로 진행되는 보고이므로, 질문 없이 보고 + 짧은 마무리 인사로 끝내세요.
+**중요**: 이건 확인을 요청하는 메시지가 아니라 그냥 보고입니다. "이대로 진행할까요?" 같은 확인 질문을 절대 넣지 마세요. 답장을 기다리지 않고 그대로 진행되는 보고이므로, 질문 없이 보고 + 짧은 마무리 인사로 끝내세요.
 
 Slack 메시지로 바로 보낼 수 있도록, 마크다운 제목(#) 없이 이모지와 줄바꿈으로 읽기 쉽게 작성하세요. ${EMOJI_GUIDE}
 
@@ -227,31 +222,32 @@ export interface PlanReplyResult {
 }
 
 /**
- * 매니저가 오늘의 계획 메시지에 남긴 답장을 해석합니다. (규칙 기반 스텁)
+ * 매니저가 봇을 @멘션하며 남긴 의견을 해석합니다. (규칙 기반 스텁)
  * ANTHROPIC_API_KEY 없이도 동작을 보여주기 위한 결정적 스텁 — 아주 단순한 키워드 판단만 합니다.
  */
 export function interpretPlanReplyStub(
   planMessage: string,
   replyText: string
 ): PlanReplyResult {
-  const confirmWords = ["맞아", "좋아", "네", "ㅇㅇ", "오케이", "okay", "ok", "진행"];
+  const confirmWords = ["맞아", "좋아", "네", "ㅇㅇ", "오케이", "okay", "ok", "진행", "고마워", "수고"];
   const isConfirm = confirmWords.some((w) => replyText.toLowerCase().includes(w.toLowerCase()));
 
   if (isConfirm) {
-    return { confirmed: true, message: "✅ 확정했습니다. 오늘도 화이팅!" };
+    return { confirmed: true, message: "✅ 확인했습니다. 오늘도 화이팅!" };
   }
 
   return {
     confirmed: false,
-    message: `${planMessage}\n\n(위 의견 "${replyText}"을(를) 반영하려면 ANTHROPIC_API_KEY 설정이 필요합니다. 지금은 원래 계획을 다시 보여드립니다.)\n\n${CONFIRM_QUESTION}`,
+    message: `${planMessage}\n\n(위 의견 "${replyText}"을(를) 반영하려면 ANTHROPIC_API_KEY 설정이 필요합니다. 지금은 원래 내용을 다시 보여드립니다.)`,
   };
 }
 
 /**
- * 매니저가 오늘의 계획 메시지에 남긴 답장을 Claude로 해석합니다.
- * - 확정(동의)이면 confirmed=true와 짧은 확인 메시지를 반환합니다.
- * - 이견/추가 요청이면 confirmed=false와, 그 의견을 반영해 다시 정리한 계획 메시지를 반환합니다.
- * 실제 체크리스트 상태는 이 함수가 자동으로 바꾸지 않습니다 — 매니저가 다시 확인할 새 메시지만 만듭니다.
+ * 매니저가 봇을 @멘션하며 남긴 의견을 Claude로 해석합니다(확정 전/후 상관없이 멘션했을 때만 호출됨).
+ * - 단순 확인/감사 인사면 confirmed=true와 짧은 응답을 반환합니다.
+ * - 이견/추가 요청이면 confirmed=false와, 그 의견을 반영해 다시 정리한 보고 메시지를 반환합니다.
+ * 어느 쪽이든 다시 확인을 요청하는 질문은 넣지 않습니다 — 그냥 반영해서 보고만 합니다.
+ * 실제 체크리스트 상태는 이 함수가 자동으로 바꾸지 않습니다 — 매니저가 볼 새 메시지만 만듭니다.
  */
 export async function interpretPlanReply(
   planMessage: string,
@@ -262,26 +258,28 @@ export async function interpretPlanReply(
     return interpretPlanReplyStub(planMessage, replyText);
   }
 
-  const prompt = `당신은 "스테이디멘션" 숙박시설 운영팀의 프로젝트 매니저(PM)입니다. 오늘 아침 아래 계획을 운영방에 보냈고, 매니저가 답장을 남겼습니다.
+  const prompt = `당신은 "스테이디멘션" 숙박시설 운영팀의 프로젝트 매니저(PM)입니다. 최근 아래 내용을 운영방에 보고했고, 매니저가 봇을 @멘션하며 의견을 남겼습니다.
 
 ${dateGuide()}
 
-## 오늘 보낸 계획
+## 최근 보낸 내용
 ${planMessage}
 
 ## 현재 체크리스트
 ${checklistText(items)}
 
-## 매니저의 답장
+## 매니저가 멘션하며 남긴 의견
 "${replyText}"
 
-이 답장이 (a) 계획에 동의/확정하는 내용인지, (b) 이견이 있거나 새로운 할 일/일정 변경을 요청하는 내용인지 판단하세요.
+이 의견이 (a) 단순 확인/감사 인사 등 별도 반영이 필요 없는 내용인지, (b) 이견이 있거나 새로운 할 일/일정 변경을 요청하는 내용인지 판단하세요.
 
 반드시 아래 JSON 형식으로만 답하세요 (다른 텍스트 없이):
 {"confirmed": true 또는 false, "message": "..."}
 
-- confirmed가 true면 message는 짧은 한국어 확인 메시지("확정했습니다" 등)로 채우세요.
-- confirmed가 false면 message는 매니저의 의견을 반영해서 다시 정리한 전체 계획 메시지로 채우세요. 실제 체크리스트 상태를 자동으로 바꿨다고 말하지 말고, 제안 형태로 작성하고 마지막 줄에 반드시 "${CONFIRM_QUESTION}"를 그대로 포함하세요. ${EMOJI_GUIDE}
+- confirmed가 true면 message는 짧은 한국어 응답("확인했습니다" 등)으로 채우세요.
+- confirmed가 false면 message는 매니저의 의견을 반영해서 다시 정리한 전체 보고 메시지로 채우세요. 실제 체크리스트 상태를 자동으로 바꿨다고 말하지 말고, "이렇게 반영해서 정리했습니다" 톤으로 작성하세요. ${EMOJI_GUIDE}
+
+**중요**: 어느 쪽이든 "이대로 진행할까요?" 같은 확인 질문을 다시 넣지 마세요. 반영/확인 결과를 보고하고 끝내세요 (재수정이 더 필요하면 매니저가 다시 멘션할 것입니다).
 
 ${CAPABILITY_GUIDE}`;
 
@@ -309,9 +307,9 @@ ${CAPABILITY_GUIDE}`;
     // 아래 fallback으로 진행
   }
 
-  // 파싱 실패 시: 안전하게 "미확정"으로 처리하고 원래 계획을 다시 보여줌
+  // 파싱 실패 시: 안전하게 "미확정"으로 처리하고 원래 내용을 다시 보여줌
   return {
     confirmed: false,
-    message: `${planMessage}\n\n(답장을 이해하지 못해 원래 계획을 다시 보여드립니다. 다시 한번 말씀해주세요.)\n\n${CONFIRM_QUESTION}`,
+    message: `${planMessage}\n\n(의견을 이해하지 못해 원래 내용을 다시 보여드립니다. 다시 한번 말씀해주세요.)`,
   };
 }

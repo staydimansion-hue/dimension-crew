@@ -29,8 +29,8 @@ function isAuthorized(request: Request): boolean {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const dryRun = searchParams.get("dryRun") === "1";
-  // 아침(morning, 기본값): 오늘 할 일 브리핑 + 확인 요청.
-  // 저녁(evening): 오늘 하루 대화를 읽고 보고만 함, 확인 요청 없이 그대로 진행.
+  // 아침(morning, 기본값)과 저녁(evening) 둘 다 확인 요청 없이 정리해서 보고만
+  // 합니다 — 재수정이 필요하면 매니저가 봇을 @멘션합니다.
   const isEvening = searchParams.get("phase") === "evening";
 
   // 드라이런: Slack/Supabase 없이 샘플 데이터로 실제 전송될 메시지를 렌더링만 해서 반환.
@@ -86,13 +86,13 @@ export async function GET(request: Request) {
     };
 
     const planDate = kstDateString();
-    // 저녁 리포트는 확인을 요청하지 않으므로 곧바로 confirmed로 저장한다.
-    // (그래도 확정된 상태라 이후 @멘션으로는 계속 재수정 가능)
+    // 아침/저녁 모두 확인을 요청하지 않으므로 곧바로 confirmed로 저장한다.
+    // (그래도 이후 @멘션으로는 계속 재수정 가능)
     const { error } = await supabaseAdmin.from("checklist_daily_plan").upsert(
       {
         plan_date: planDate,
         message_text: message,
-        status: isEvening ? "confirmed" : "pending",
+        status: "confirmed",
         revision: 0,
         slack_message_ts: slackResponse.ts ?? null,
         updated_at: new Date().toISOString(),

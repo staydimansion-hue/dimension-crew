@@ -69,15 +69,22 @@ export async function POST(request: Request) {
     `슬랙 이벤트 상세: type=${event.type} channel=${event.channel} operationsChannel=${operationsChannel} subtype=${event.subtype} bot_id=${event.bot_id} hasText=${Boolean(event.text)}`
   );
 
+  // 아침/저녁 보고는 확인을 요청하지 않으므로, 일반 메시지에는 반응하지 않습니다.
+  // 봇을 명시적으로 @멘션했을 때만(app_mention) 재정리 요청으로 처리합니다.
   if (
-    (event.type !== "message" && event.type !== "app_mention") ||
+    event.type !== "app_mention" ||
     event.subtype ||
     event.bot_id ||
     !event.text ||
     !operationsChannel ||
     event.channel !== operationsChannel
   ) {
-    console.log("슬랙 이벤트 무시: 필터 조건에 해당");
+    console.log("슬랙 이벤트 무시: 필터 조건에 해당(멘션이 아니거나 대상 채널이 아님)");
+    return NextResponse.json({ ok: true });
+  }
+
+  const replyText = stripMentions(event.text);
+  if (!replyText) {
     return NextResponse.json({ ok: true });
   }
 
@@ -85,7 +92,7 @@ export async function POST(request: Request) {
     const today = kstDateString();
     const { data: plan, error: planError } = await supabaseAdmin
       .from("checklist_daily_plan")
-      .select("id, message_text, status, revision")
+      .select("id, message_text, revision")
       .eq("plan_date", today)
       .maybeSingle();
 
@@ -95,51 +102,26 @@ export async function POST(request: Request) {
     }
     if (!plan) {
       console.log("슬랙 이벤트 무시: 오늘 날짜의 checklist_daily_plan이 없음");
-      // 오늘 아직 브리핑을 보내지 않았으면 반응하지 않습니다(다음 브리핑 때 대화로 반영됨).
-      return NextResponse.json({ ok: true });
-    }
-    console.log(`오늘 계획 상태: status=${plan.status} revision=${plan.revision}`);
-
-    // 확정 전(pending)에는 일반 메시지에 반응하고, 확정 후(confirmed)에는 봇을
-    // 명시적으로 멘션했을 때만 다시 엽니다 — 그래야 확정 후의 모든 잡담에 반응해서
-    // 시끄러워지는 걸 막을 수 있습니다.
-    if (plan.status === "pending" && event.type !== "message") {
-      console.log("슬랙 이벤트 무시: pending 상태에서는 멘션에 반응하지 않음");
-      return NextResponse.json({ ok: true });
-    }
-    if (plan.status === "confirmed" && event.type !== "app_mention") {
-      console.log("슬랙 이벤트 무시: confirmed 상태에서는 일반 메시지에 반응하지 않음");
-      return NextResponse.json({ ok: true });
-    }
-
-    const replyText = event.type === "app_mention" ? stripMentions(event.text) : event.text;
-    if (!replyText) {
+      // 오늘 아직 아침/저녁 보고를 안 보냈으면 반응하지 않습니다(다음 보고 때 대화로 반영됨).
       return NextResponse.json({ ok: true });
     }
 
     const items = await fetchChecklistItems();
     const result = await interpretPlanReply(plan.message_text, items, replyText);
-    console.log(`답장 해석 결과: confirmed=${result.confirmed}`);
+    console.log(`멘션 해석 결과: confirmed=${result.confirmed}`);
 
     await postSlackMessage({ channel: operationsChannel, text: result.message });
     console.log("슬랙 응답 메시지 전송 완료");
 
-    if (result.confirmed) {
-      await supabaseAdmin
-        .from("checklist_daily_plan")
-        .update({ status: "confirmed", updated_at: new Date().toISOString() })
-        .eq("id", plan.id);
-    } else {
-      await supabaseAdmin
-        .from("checklist_daily_plan")
-        .update({
-          message_text: result.message,
-          status: "pending",
-          revision: plan.revision + 1,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", plan.id);
-    }
+    await supabaseAdmin
+      .from("checklist_daily_plan")
+      .update({
+        message_text: result.message,
+        status: "confirmed",
+        revision: result.confirmed ? plan.revision : plan.revision + 1,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", plan.id);
 
     return NextResponse.json({ ok: true });
   } catch (err) {
