@@ -16,6 +16,9 @@ export default function AdminRoomsPage() {
   const [number, setNumber] = useState("");
   const [typeName, setTypeName] = useState("");
   const [error, setError] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTypeName, setEditTypeName] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -54,6 +57,30 @@ export default function AdminRoomsPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ isActive: !room.is_active }),
     });
+    load();
+  }
+
+  function startEdit(room: Room) {
+    setEditingId(room.id);
+    setEditTypeName(room.type_name);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditTypeName("");
+  }
+
+  async function saveEdit(room: Room) {
+    const trimmed = editTypeName.trim();
+    if (!trimmed) return;
+    setSavingEdit(true);
+    await fetch(`/api/admin/rooms/${room.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ typeName: trimmed }),
+    });
+    setSavingEdit(false);
+    setEditingId(null);
     load();
   }
 
@@ -123,24 +150,62 @@ export default function AdminRoomsPage() {
                   </td>
                 </tr>
               ) : (
-                rooms.map((r) => (
-                  <tr key={r.id} className="border-b border-line last:border-0">
-                    <td className="px-4 py-3 font-semibold">{r.number}</td>
-                    <td className="px-4 py-3">{r.type_name}</td>
-                    <td className="px-4 py-3">
-                      {r.is_active ? (
-                        <span className="text-sage">사용중</span>
-                      ) : (
-                        <span className="text-muted">비활성</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <button onClick={() => toggleActive(r)} className="text-ink underline">
-                        {r.is_active ? "비활성화" : "활성화"}
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                rooms.map((r) => {
+                  const isEditing = editingId === r.id;
+                  return (
+                    <tr key={r.id} className="border-b border-line last:border-0">
+                      <td className="px-4 py-3 font-semibold">{r.number}</td>
+                      <td className="px-4 py-3">
+                        {isEditing ? (
+                          <input
+                            autoFocus
+                            className="border-0 border-b border-line bg-transparent text-[13.5px] py-0.5 outline-none focus:border-accent"
+                            value={editTypeName}
+                            onChange={(e) => setEditTypeName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") saveEdit(r);
+                              if (e.key === "Escape") cancelEdit();
+                            }}
+                          />
+                        ) : (
+                          r.type_name
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {r.is_active ? (
+                          <span className="text-sage">사용중</span>
+                        ) : (
+                          <span className="text-muted">비활성</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {isEditing ? (
+                          <div className="flex gap-3">
+                            <button
+                              onClick={() => saveEdit(r)}
+                              disabled={savingEdit}
+                              className="text-accent underline disabled:opacity-50"
+                            >
+                              저장
+                            </button>
+                            <button onClick={cancelEdit} className="text-muted underline">
+                              취소
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex gap-3">
+                            <button onClick={() => startEdit(r)} className="text-ink underline">
+                              수정
+                            </button>
+                            <button onClick={() => toggleActive(r)} className="text-ink underline">
+                              {r.is_active ? "비활성화" : "활성화"}
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
