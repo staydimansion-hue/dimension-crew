@@ -57,6 +57,8 @@ export default function AdminRecordsPage() {
   const [rows, setRows] = useState<RecordRow[]>([]);
   const [summary, setSummary] = useState<Summary[]>([]);
   const [loading, setLoading] = useState(true);
+  // 객실 헤더를 누를 때마다 none(완료순) → asc(작은 번호 먼저, ↓) → desc(큰 번호 먼저, ↑) → none 순서로 바뀐다.
+  const [roomSort, setRoomSort] = useState<"none" | "asc" | "desc">("none");
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [notesModal, setNotesModal] = useState<{
     roomNumber: string;
@@ -98,8 +100,23 @@ export default function AdminRecordsPage() {
       arr.push(r);
       map.set(r.workDate, arr);
     }
-    return Array.from(map.entries());
-  }, [rows]);
+    const entries = Array.from(map.entries());
+    if (roomSort === "none") return entries;
+
+    // 객실 번호순 정렬은 날짜 안에서만 적용한다(날짜 그룹 순서는 그대로).
+    // 번호가 같은 행끼리는 기존 완료순이 유지된다(JS sort는 stable).
+    const dir = roomSort === "asc" ? 1 : -1;
+    return entries.map(([date, dateRows]): [string, RecordRow[]] => [
+      date,
+      [...dateRows].sort(
+        (a, b) => dir * a.roomNumber.localeCompare(b.roomNumber, "ko", { numeric: true })
+      ),
+    ]);
+  }, [rows, roomSort]);
+
+  function cycleRoomSort() {
+    setRoomSort((prev) => (prev === "none" ? "asc" : prev === "asc" ? "desc" : "none"));
+  }
 
   return (
     <div className="min-h-dvh bg-bg flex flex-col">
@@ -192,7 +209,31 @@ export default function AdminRecordsPage() {
                               key={h}
                               className="px-4 py-3 text-[11px] tracking-[0.1em] text-muted uppercase font-semibold border-b border-line"
                             >
-                              {h}
+                              {h === "객실" ? (
+                                <button
+                                  type="button"
+                                  onClick={cycleRoomSort}
+                                  aria-label={`객실 정렬: ${
+                                    roomSort === "asc"
+                                      ? "번호 작은 순"
+                                      : roomSort === "desc"
+                                        ? "번호 큰 순"
+                                        : "완료순"
+                                  }`}
+                                  className="inline-flex items-center gap-1.5 -mx-2 px-2 py-1.5 uppercase tracking-[0.1em] font-semibold rounded-md hover:bg-bg"
+                                >
+                                  <span>객실</span>
+                                  <span
+                                    className={`text-[14px] leading-none w-3 text-center ${
+                                      roomSort === "none" ? "text-muted" : "text-accent"
+                                    }`}
+                                  >
+                                    {roomSort === "asc" ? "↓" : roomSort === "desc" ? "↑" : "-"}
+                                  </span>
+                                </button>
+                              ) : (
+                                h
+                              )}
                             </th>
                           )
                         )}
