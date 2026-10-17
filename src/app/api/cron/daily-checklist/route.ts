@@ -37,13 +37,21 @@ export async function GET(request: Request) {
   // 실제 발송/저장이 없으므로 인증/시크릿이 필요 없습니다.
   if (dryRun) {
     const useAi = Boolean(process.env.ANTHROPIC_API_KEY);
-    const message = useAi
-      ? isEvening
-        ? await buildEveningReport(SAMPLE_CHECKLIST, SAMPLE_MESSAGES)
-        : await buildDailyPlan(SAMPLE_CHECKLIST, SAMPLE_MESSAGES)
-      : isEvening
-        ? buildStubEveningReport(SAMPLE_CHECKLIST, SAMPLE_MESSAGES)
-        : buildStubDailyPlan(SAMPLE_CHECKLIST, SAMPLE_MESSAGES);
+    let message: string;
+    try {
+      message = useAi
+        ? isEvening
+          ? await buildEveningReport(SAMPLE_CHECKLIST, SAMPLE_MESSAGES)
+          : await buildDailyPlan(SAMPLE_CHECKLIST, SAMPLE_MESSAGES)
+        : isEvening
+          ? buildStubEveningReport(SAMPLE_CHECKLIST, SAMPLE_MESSAGES)
+          : buildStubDailyPlan(SAMPLE_CHECKLIST, SAMPLE_MESSAGES);
+    } catch (err) {
+      // 원인(크레딧 소진·키 오류 등)이 응답에 보이도록 한다. 에러 처리가 없으면 내용 없는 500만 나가서 원인을 알 수 없다.
+      const messageText = err instanceof Error ? err.message : "알 수 없는 오류";
+      console.error("드라이런 메시지 생성 실패:", err);
+      return NextResponse.json({ ok: false, dryRun: true, error: messageText }, { status: 500 });
+    }
     return NextResponse.json({
       ok: true,
       dryRun: true,
@@ -112,6 +120,8 @@ export async function GET(request: Request) {
     });
   } catch (err) {
     const messageText = err instanceof Error ? err.message : "알 수 없는 오류";
+    // Railway 로그에도 남겨서, 크론이 조용히 실패해도 원인을 추적할 수 있게 한다.
+    console.error("daily-checklist 크론 실패:", err);
     return NextResponse.json({ error: messageText }, { status: 500 });
   }
 }
