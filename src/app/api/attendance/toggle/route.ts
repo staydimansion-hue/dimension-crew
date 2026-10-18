@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getStaffSession } from "@/lib/staffSession";
 import { kstDateString, kstDateTimeString, kstTimeString } from "@/lib/kst";
 import { appendCheckInRow, updateCheckOutRow } from "@/lib/sheets";
+import { createAttendancePage, updateAttendancePage } from "@/lib/notion";
 import { postSlackMessage } from "@/lib/slack";
 
 async function notifyCheckIn(name: string, now: Date) {
@@ -71,7 +72,7 @@ export async function POST(request: Request) {
 
   const { data: openShift, error: openShiftError } = await supabaseAdmin
     .from("shifts")
-    .select("id, clock_in_at, sheet_row")
+    .select("id, clock_in_at, sheet_row, notion_page_id")
     .eq("staff_id", session.staffId)
     .is("clock_out_at", null)
     .maybeSingle();
@@ -93,11 +94,23 @@ export async function POST(request: Request) {
       console.error("Google Sheets 출근 기록 실패:", err);
     }
 
+    let notionPageId: string | null = null;
+    try {
+      notionPageId = await createAttendancePage({
+        name: session.name,
+        dateStr: todayStr,
+        checkInIso: now.toISOString(),
+      });
+    } catch (err) {
+      console.error("Notion 출근 기록 실패:", err);
+    }
+
     const { error: insertError } = await supabaseAdmin.from("shifts").insert({
       staff_id: session.staffId,
       work_date: todayStr,
       clock_in_at: now.toISOString(),
       sheet_row: sheetRow,
+      notion_page_id: notionPageId,
     });
 
     if (insertError) {
@@ -144,6 +157,19 @@ export async function POST(request: Request) {
       });
     } catch (err) {
       console.error("Google Sheets 퇴근 기록 실패:", err);
+    }
+  }
+
+  if (openShift.notion_page_id) {
+    try {
+      await updateAttendancePage({
+        pageId: openShift.notion_page_id,
+        checkOutIso: now.toISOString(),
+        hoursWorked,
+        amount,
+      });
+    } catch (err) {
+      console.error("Notion 퇴근 기록 실패:", err);
     }
   }
 
