@@ -166,7 +166,6 @@ export async function POST(request: Request) {
         pageId: openShift.notion_page_id,
         checkOutIso: now.toISOString(),
         hoursWorked,
-        amount,
       });
     } catch (err) {
       console.error("Notion 퇴근 기록 실패:", err);

@@ -44,11 +44,11 @@ export async function createAttendancePage(params: {
     method: "POST",
     body: JSON.stringify({
       parent: { database_id: databaseId },
+      icon: { type: "emoji", emoji: "👤" },
       properties: {
         이름: { title: [{ text: { content: params.name } }] },
         날짜: { date: { start: params.dateStr } },
         출근시각: { date: { start: params.checkInIso } },
-        상태: { select: { name: "근무중" } },
       },
     }),
   });
@@ -56,22 +56,19 @@ export async function createAttendancePage(params: {
 }
 
 /**
- * 퇴근 시 기존 Notion 페이지의 퇴근시각/근무시간/금액/상태를 채운다.
+ * 퇴근 시 기존 Notion 페이지의 퇴근시각/총근무시간을 채운다.
  */
 export async function updateAttendancePage(params: {
   pageId: string;
   checkOutIso: string;
   hoursWorked: number;
-  amount: number;
 }) {
   await notionFetch(`/pages/${params.pageId}`, {
     method: "PATCH",
     body: JSON.stringify({
       properties: {
         퇴근시각: { date: { start: params.checkOutIso } },
-        "근무시간(h)": { number: params.hoursWorked },
-        "금액(원)": { number: params.amount },
-        상태: { select: { name: "완료" } },
+        "총근무시간(h)": { number: params.hoursWorked },
       },
     }),
   });
