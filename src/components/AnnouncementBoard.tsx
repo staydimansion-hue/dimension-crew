@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-type Announcement = { id: string; message: string; created_at: string };
+type Announcement = { id: string; message: string; created_at: string; isPersonal?: boolean };
 
 function toKstShort(iso: string): string {
   return new Date(iso).toLocaleDateString("ko-KR", {
@@ -32,6 +32,11 @@ export default function AnnouncementBoard() {
       <div className="flex flex-col gap-2.5">
         {list.map((a) => (
           <div key={a.id} className="border-t border-sage/20 pt-2.5 first:border-0 first:pt-0">
+            {a.isPersonal && (
+              <span className="inline-block text-[10px] px-2 py-0.5 rounded-full bg-brick-tint text-brick font-semibold mb-1">
+                나에게 온 메시지
+              </span>
+            )}
             <div className="text-[13px] whitespace-pre-wrap">{a.message}</div>
             <div className="text-[11px] text-muted mt-1">{toKstShort(a.created_at)}</div>
           </div>

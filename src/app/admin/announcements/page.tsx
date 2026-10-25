@@ -3,7 +3,13 @@
 import { useEffect, useState, useCallback } from "react";
 import AdminNav from "@/components/AdminNav";
 
-type Announcement = { id: string; message: string; created_at: string };
+type Announcement = {
+  id: string;
+  message: string;
+  created_at: string;
+  staffName: string | null;
+};
+type Staff = { id: string; name: string };
 
 function toKstLocal(iso: string): string {
   return new Date(iso).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
@@ -11,8 +17,10 @@ function toKstLocal(iso: string): string {
 
 export default function AdminAnnouncementsPage() {
   const [list, setList] = useState<Announcement[]>([]);
+  const [staffList, setStaffList] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [staffId, setStaffId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -22,6 +30,12 @@ export default function AdminAnnouncementsPage() {
     const data = await res.json();
     if (res.ok) setList(data.announcements);
     setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/admin/staff")
+      .then((res) => res.json())
+      .then((data) => setStaffList(data.staff ?? []));
   }, []);
 
   useEffect(() => {
@@ -36,7 +50,7 @@ export default function AdminAnnouncementsPage() {
     const res = await fetch("/api/admin/announcements", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ message, staffId: staffId || null }),
     });
     const data = await res.json();
     setSubmitting(false);
@@ -45,6 +59,7 @@ export default function AdminAnnouncementsPage() {
       return;
     }
     setMessage("");
+    setStaffId("");
     load();
   }
 
@@ -70,6 +85,21 @@ export default function AdminAnnouncementsPage() {
           onSubmit={handleCreate}
           className="bg-card border border-line rounded-2xl p-6 mb-6 flex flex-col gap-3"
         >
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[10.5px] tracking-[0.1em] text-muted uppercase">받는 사람</span>
+            <select
+              value={staffId}
+              onChange={(e) => setStaffId(e.target.value)}
+              className="w-full sm:w-56 border border-line rounded-lg pl-3 pr-8 py-2 text-[13px] bg-bg"
+            >
+              <option value="">전체 근로자</option>
+              {staffList.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </label>
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
@@ -99,6 +129,15 @@ export default function AdminAnnouncementsPage() {
                 className="bg-card border border-line rounded-xl p-4 flex items-start justify-between gap-4"
               >
                 <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span
+                      className={`text-[10.5px] px-2 py-0.5 rounded-full font-semibold ${
+                        a.staffName ? "bg-brick-tint text-brick" : "bg-sage-tint text-sage"
+                      }`}
+                    >
+                      {a.staffName ? `${a.staffName}님께` : "전체"}
+                    </span>
+                  </div>
                   <div className="text-[13.5px] whitespace-pre-wrap">{a.message}</div>
                   <div className="text-[11px] text-muted mt-1.5">{toKstLocal(a.created_at)}</div>
                 </div>
