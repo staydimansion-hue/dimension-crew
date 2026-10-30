@@ -38,8 +38,7 @@ async function handle(request: Request) {
     return NextResponse.json({ error: "SLACK_MANAGER_USER_ID 환경변수가 설정되지 않았습니다." }, { status: 500 });
   }
 
-  // 2026-10-30 변경: 4일(또는 그 전 영업일) → 매월 1일에 보낸다.
-  // 지급주기(전달 5일 ~ 이번 달 4일, 5일 지급)는 그대로이고, 1~4일 근무분은 보낸 시점엔 아직 없을 수 있다.
+  // 2026-10-30 변경: 4일(또는 그 전 영업일) → 매월 1일에 전달 1일~말일 근무분을 보낸다(5일 지급).
   const today = kstDateString();
   const [y, m, d] = today.split("-").map(Number);
   const reminderDate = `${y}-${String(m).padStart(2, "0")}-01`;
@@ -106,10 +105,6 @@ async function handle(request: Request) {
       {
         type: "section",
         text: { type: "mrkdwn", text: `*합계: ${total.toLocaleString()}원*` },
-      },
-      {
-        type: "context",
-        elements: [{ type: "mrkdwn", text: `${y}-${String(m).padStart(2, "0")}-01 ~ ${to} 근무분은 아직 반영 전일 수 있어요. 지급 전에 한 번 더 확인해 주세요.` }],
       },
       {
         type: "actions",
