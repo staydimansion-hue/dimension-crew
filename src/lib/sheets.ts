@@ -2,6 +2,8 @@ import { google } from "googleapis";
 
 const SHEET_TAB_NAME = process.env.GOOGLE_SHEETS_TAB_NAME || "QR출퇴근기록";
 const PAYROLL_TAB_NAME = process.env.GOOGLE_SHEETS_PAYROLL_TAB_NAME || "매입)인건비";
+const PAYROLL_AUTHOR = process.env.PAYROLL_AUTHOR || "이성훈";
+const PAYROLL_TASK_NAME = process.env.PAYROLL_TASK_NAME || "하우스키핑";
 const HEADER_ROW = [
   "날짜",
   "이름",
@@ -198,10 +200,10 @@ export async function formatAttendanceSheet() {
 
 /**
  * 급여장부(매입)인건비 탭)에서 이름이 일치하면서 시급(H열)이 비어있는
- * 가장 위쪽 행을 찾아 월(B)/일자(C)/시급(H)/근무일정(I)/근무시간(J)을 채운다.
- * 그런 행이 없으면 새 행을 만들어 월(B)·일자(C)·이름(F)·시급(H)·근무일정(I)·
- * 근무시간(J)만 채우고, 작성자·요청금액·업무명(A,D)과 주민등록번호(G)는
- * 매니저가 나중에 입금 요청할 때 직접 채우도록 비워둔다.
+ * 가장 위쪽 행을 찾아 채우고, 그런 행이 없으면 새 행을 만든다.
+ * 작성자(A)/월(B)/일자(C)/금액(D)/업무명(E)/이름(F)/시급(H)/근무일정(I)/근무시간(J)을
+ * 모두 채운다. 주민등록번호(G)와 계좌번호(K)는 절대 건드리지 않는다.
+ * 금액은 10분 단위로 반올림한 근무시간 × 시급 (기존 행과 같은 계산).
  */
 export async function writePayrollEntry(params: {
   name: string;
@@ -236,6 +238,7 @@ export async function writePayrollEntry(params: {
   const [, monthStr, dayStr] = params.workDate.split("-");
   const month = Number(monthStr);
   const day = Number(dayStr);
+  const amount = Math.round(params.hourlyWage * roundedHours);
 
   if (targetRow === -1) {
     const appendRes = await sheets.spreadsheets.values.append({
@@ -245,7 +248,7 @@ export async function writePayrollEntry(params: {
       insertDataOption: "INSERT_ROWS",
       requestBody: {
         values: [
-          ["", month, day, "", "", params.name, "", params.hourlyWage, scheduleStr, roundedHours],
+          [PAYROLL_AUTHOR, month, day, amount, PAYROLL_TASK_NAME, params.name, "", params.hourlyWage, scheduleStr, roundedHours],
         ],
       },
     });
@@ -260,10 +263,10 @@ export async function writePayrollEntry(params: {
 
   await sheets.spreadsheets.values.update({
     spreadsheetId,
-    range: `${PAYROLL_TAB_NAME}!B${targetRow}:C${targetRow}`,
+    range: `${PAYROLL_TAB_NAME}!A${targetRow}:E${targetRow}`,
     valueInputOption: "RAW",
     requestBody: {
-      values: [[month, day]],
+      values: [[PAYROLL_AUTHOR, month, day, amount, PAYROLL_TASK_NAME]],
     },
   });
 
