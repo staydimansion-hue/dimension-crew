@@ -38,6 +38,20 @@ function toKstLocal(iso: string): string {
   return new Date(iso).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
 }
 
+function toKstInputValue(iso: string): string {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  const parts = Object.fromEntries(formatter.formatToParts(new Date(iso)).map((p) => [p.type, p.value]));
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+}
+
 function todayKstDateString(): string {
   return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
 }
@@ -48,6 +62,10 @@ export default function AdminPayrollPage() {
   const [loading, setLoading] = useState(true);
   const [payrollBusyId, setPayrollBusyId] = useState<string | null>(null);
   const [payrollError, setPayrollError] = useState<{ id: string; message: string } | null>(null);
+  const [editShift, setEditShift] = useState<ShiftRow | null>(null);
+  const [editValue, setEditValue] = useState("");
+  const [editSubmitting, setEditSubmitting] = useState(false);
+  const [editError, setEditError] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -72,6 +90,25 @@ export default function AdminPayrollPage() {
       setPayrollError({ id, message: json.error || "입력에 실패했습니다." });
       return;
     }
+    load();
+  }
+
+  async function handleEditSave() {
+    if (!editShift) return;
+    setEditSubmitting(true);
+    setEditError("");
+    const res = await fetch(`/api/admin/shifts/${editShift.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ clockOutAt: editValue }),
+    });
+    const json = await res.json();
+    setEditSubmitting(false);
+    if (!res.ok) {
+      setEditError(json.error || "수정에 실패했습니다.");
+      return;
+    }
+    setEditShift(null);
     load();
   }
 
@@ -198,7 +235,18 @@ export default function AdminPayrollPage() {
                     <td className="px-4 py-3 text-muted">{s.workDate}</td>
                     <td className="px-4 py-3 font-semibold">{s.staffName}</td>
                     <td className="px-4 py-3">{toKstLocal(s.clockInAt)}</td>
-                    <td className="px-4 py-3">{toKstLocal(s.clockOutAt)}</td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => {
+                          setEditShift(s);
+                          setEditValue(toKstInputValue(s.clockOutAt));
+                          setEditError("");
+                        }}
+                        className="underline decoration-dotted"
+                      >
+                        {toKstLocal(s.clockOutAt)}
+                      </button>
+                    </td>
                     <td className="px-4 py-3">
                       {s.hoursWorked != null ? `${s.hoursWorked}h` : "-"}
                     </td>
@@ -232,6 +280,49 @@ export default function AdminPayrollPage() {
           </table>
         </div>
       </div>
+
+      {editShift && (
+        <div
+          onClick={() => setEditShift(null)}
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-card rounded-2xl w-full max-w-xs p-6 flex flex-col gap-4"
+          >
+            <div className="text-[15px] font-bold">
+              {editShift.staffName}님 퇴근시각 수정
+              <div className="text-[11.5px] text-muted font-normal mt-1">{editShift.workDate}</div>
+            </div>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[10.5px] tracking-[0.1em] text-muted uppercase">퇴근시각</span>
+              <input
+                type="datetime-local"
+                autoFocus
+                className="w-full border border-line rounded-lg px-3 py-2 text-[13px] bg-bg"
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+              />
+            </label>
+            {editError && <p className="text-[12px] text-brick">{editError}</p>}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setEditShift(null)}
+                className="flex-1 border border-line rounded-lg py-2.5 text-[13px] text-muted"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleEditSave}
+                disabled={editSubmitting}
+                className="flex-1 bg-accent text-bg rounded-lg py-2.5 text-[13px] font-semibold disabled:opacity-50"
+              >
+                {editSubmitting ? "저장 중..." : "저장"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
